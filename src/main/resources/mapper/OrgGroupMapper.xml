@@ -9,7 +9,7 @@
         <if test="keywords != null and keywords != ''">
             AND grp.name LIKE CONCAT('%','${keywords}','%' )
         </if>
-        <if test="disabled != null and disabled != ''">
+        <if test="disabled != null">
             AND grp.disabled = #{disabled}
         </if>
 
@@ -53,9 +53,9 @@
 
     <insert id="save" parameterType="TstOrgGroup" useGeneratedKeys="true" keyProperty="id">
         insert into TstOrgGroup
-          (name,orgId,deleted,disabled,createTime,version)
+          (name,orgId,deleted,disabled,createTime)
         values
-          (#{name},#{orgId},FALSE,FALSE,NOW(),0)
+          (#{name},#{orgId},FALSE,FALSE,NOW())
     </insert>
 
     <update id="update" parameterType="TstOrgGroup">

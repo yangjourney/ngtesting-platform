@@ -1,9 +1,10 @@
 package com.ngtesting.platform.model;
 
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
-public class TstCaseInRun extends BaseModel {
+public class TstCaseInTask extends BaseModel {
 	private static final long serialVersionUID = -5955583523485410239L;
 
 	private String name;
@@ -18,9 +19,15 @@ public class TstCaseInRun extends BaseModel {
 	private Boolean isLeaf;
 
     private Integer entityId; // 真正是实体Id
+	private Integer projectId;
+	private Integer planId;
+	private Integer taskId;
 
 	private Integer createBy;
 	private Integer updateBy;
+
+	private Date exeTime;
+	private Integer exeBy;
 
     private String status;
 
@@ -57,7 +64,31 @@ public class TstCaseInRun extends BaseModel {
 	private List<TstCaseComments> comments = new LinkedList<>();
 	private List<TstCaseAttachment> attachments = new LinkedList<>();
 
-    private List<TstCaseInRunHistory> histories = new LinkedList<>();
+    private List<TstCaseInTaskHistory> histories = new LinkedList<>();
+
+	public Integer getProjectId() {
+		return projectId;
+	}
+
+	public void setProjectId(Integer projectId) {
+		this.projectId = projectId;
+	}
+
+	public Integer getPlanId() {
+		return planId;
+	}
+
+	public void setPlanId(Integer planId) {
+		this.planId = planId;
+	}
+
+	public Integer getTaskId() {
+		return taskId;
+	}
+
+	public void setTaskId(Integer taskId) {
+		this.taskId = taskId;
+	}
 
 	public Integer getOrdr() {
 		return ordr;
@@ -83,7 +114,7 @@ public class TstCaseInRun extends BaseModel {
 		this.comments = comments;
 	}
 
-	public TstCaseInRun() {
+	public TstCaseInTask() {
         super();
     }
 
@@ -383,11 +414,11 @@ public class TstCaseInRun extends BaseModel {
         this.type = type;
     }
 
-    public List<TstCaseInRunHistory> getHistories() {
+    public List<TstCaseInTaskHistory> getHistories() {
         return histories;
     }
 
-    public void setHistories(List<TstCaseInRunHistory> histories) {
+    public void setHistories(List<TstCaseInTaskHistory> histories) {
         this.histories = histories;
     }
 
@@ -397,5 +428,25 @@ public class TstCaseInRun extends BaseModel {
 
 	public void setAttachments(List<TstCaseAttachment> attachments) {
 		this.attachments = attachments;
+	}
+
+	public void setUpdateBy(Integer updateBy) {
+		this.updateBy = updateBy;
+	}
+
+	public Date getExeTime() {
+		return exeTime;
+	}
+
+	public void setExeTime(Date exeTime) {
+		this.exeTime = exeTime;
+	}
+
+	public Integer getExeBy() {
+		return exeBy;
+	}
+
+	public void setExeBy(Integer exeBy) {
+		this.exeBy = exeBy;
 	}
 }

@@ -3,9 +3,11 @@ package com.ngtesting.platform.action;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.ngtesting.platform.config.Constant;
+import com.ngtesting.platform.dao.CustomFieldDao;
 import com.ngtesting.platform.model.TstCustomFieldOption;
 import com.ngtesting.platform.model.TstUser;
 import com.ngtesting.platform.service.CustomFieldOptionService;
+import com.ngtesting.platform.service.CustomFieldService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -22,9 +24,12 @@ import java.util.Map;
 @Controller
 @RequestMapping(Constant.API_PATH_CLIENT + "custom_field_option/")
 public class CustomFieldOptionAction extends BaseAction {
+    @Autowired
+    CustomFieldDao customFieldDao;
+    @Autowired
+    CustomFieldService customFieldService;
 	@Autowired
     CustomFieldOptionService customFieldOptionService;
-
 
 	@RequestMapping(value = "save", method = RequestMethod.POST)
 	@ResponseBody
@@ -32,13 +37,18 @@ public class CustomFieldOptionAction extends BaseAction {
 		Map<String, Object> ret = new HashMap<String, Object>();
 
 		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
+		Integer orgId = userVo.getDefaultOrgId();
+
+		Integer fieldId = json.getInteger("fieldId");
 
 		TstCustomFieldOption option = JSON.parseObject(JSON.toJSONString(json.getJSONObject("model")), TstCustomFieldOption.class);
 
-		TstCustomFieldOption po = customFieldOptionService.save(option);
-		List<TstCustomFieldOption> vos = customFieldOptionService.listVos(po.getFieldId());
+        option.setFieldId(fieldId);
+		customFieldOptionService.save(option);
 
-		ret.put("data", vos);
+        List<TstCustomFieldOption> vos = customFieldOptionService.listVos(fieldId);
+
+        ret.put("data", vos);
 		ret.put("code", Constant.RespCode.SUCCESS.getCode());
 		return ret;
 	}

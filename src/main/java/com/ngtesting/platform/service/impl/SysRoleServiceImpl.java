@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 public class SysRoleServiceImpl extends BaseServiceImpl implements SysRoleService {
 
 	@Override
-	public Page listByPage(Integer orgId, String keywords, String disabled, Integer currentPage, Integer itemsPerPage) {
+	public Page listByPage(Integer orgId, String keywords, Boolean disabled, Integer currentPage, Integer itemsPerPage) {
 //        DetachedCriteria dc = DetachedCriteria.forClass(SysRole.class);
 //        dc.add(Restrictions.eq("orgId", orgId));
 //
@@ -23,9 +23,9 @@ public class SysRoleServiceImpl extends BaseServiceImpl implements SysRoleServic
 //        }
 //
 //        dc.addOrder(Order.asc("id"));
-//        Page page = findPage(dc, currentPage * itemsPerPage, itemsPerPage);
+//        Page listByPage = findPage(dc, currentPage * itemsPerPage, itemsPerPage);
 //
-//		return page;
+//		return listByPage;
 
 		return null;
 	}
@@ -38,7 +38,7 @@ public class SysRoleServiceImpl extends BaseServiceImpl implements SysRoleServic
 //
 //		SysRole po = new SysRole();
 //		if (vo.getId() != null) {
-//			po = (SysRole) get(SysRole.class, vo.getId());
+//			po = (SysRole) getDetail(SysRole.class, vo.getId());
 //		}
 //
 //		po.setName(vo.getName());
@@ -53,7 +53,7 @@ public class SysRoleServiceImpl extends BaseServiceImpl implements SysRoleServic
 
 	@Override
 	public boolean delete(Integer id) {
-//		SysRole po = (SysRole) get(SysRole.class, id);
+//		SysRole po = (SysRole) getDetail(SysRole.class, id);
 //		po.setDeleted(true);
 //		saveOrUpdate(po);
 
@@ -62,7 +62,7 @@ public class SysRoleServiceImpl extends BaseServiceImpl implements SysRoleServic
 
 	@Override
 	public boolean disable(Integer id) {
-//		SysRole po = (SysRole) get(SysRole.class, id);
+//		SysRole po = (SysRole) getDetail(SysRole.class, id);
 //		po.setDisabled(!po.getDisabled());
 //		saveOrUpdate(po);
 

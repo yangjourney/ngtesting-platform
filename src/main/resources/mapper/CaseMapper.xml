@@ -4,10 +4,147 @@
 
     <insert id="create" parameterType="TstCase" useGeneratedKeys="true" keyProperty="id">
         insert into TstCase (name,type,priority,contentType,estimate,pId,projectId,createById,isLeaf,ordr,
-        deleted,disabled,createTime,version)
+        deleted,disabled,createTime)
 
         values (#{name},#{type},#{priority},#{contentType},#{estimate},#{pId},#{projectId},#{createById},#{isLeaf},#{ordr},
-        #{deleted},#{disabled},#{createTime},#{version})
+        #{deleted},#{disabled},#{createTime})
     </insert>
+
+    <select id="query" resultType="TstCase">
+        SELECT * FROM TstCase o
+
+        WHERE o.projectId = #{projectId}
+         AND O.deleted != TRUE  AND o.disabled != TRUE
+
+        ORDER BY o.pId, o.ordr
+    </select>
+
+    <select id="get" resultType="TstCase">
+        SELECT * FROM TstCase o
+        WHERE o.id = #{id}
+    </select>
+
+    <select id="getDetail" resultMap="caseMaps">
+        SELECT * FROM TstCase o
+        WHERE o.id = #{id}
+    </select>
+
+    <select id="getChildMaxOrderNumb" resultType="Integer">
+        select max(ordr) from TstCase o
+        where o.pId=#{pId}
+        and o.deleted != true
+        and o.disabled != true
+    </select>
+
+    <insert id="renameNew" parameterType="TstCase" useGeneratedKeys="true" keyProperty="id">
+        insert into TstCase
+        (name,priority,type,contentType,estimate,isLeaf,ordr,pId,
+            projectId,createById,
+            createTime,deleted,disabled)
+        values
+          (#{name},#{priority},#{type},#{contentType},#{estimate},#{isLeaf},#{ordr},#{pId},
+              #{projectId},#{createById},
+              NOW(),FALSE,FALSE)
+    </insert>
+    <update id="renameUpdate" parameterType="TstCase">
+        UPDATE TstCase
+          SET name=#{name}, updateTime=NOW()
+        WHERE id=#{id}
+    </update>
+
+    <update id="update">
+       UPDATE TstCase
+        SET name=#{obj.name},priority=#{obj.priority},type=#{obj.type},
+            contentType=#{obj.contentType},content=#{obj.content},
+            estimate=#{obj.estimate},objective=#{obj.objective},updateById=#{obj.updateById},
+
+            <foreach collection="props" item="item" separator=",">
+                prop${item} = #{obj.prop${item}}
+            </foreach>
+
+        WHERE id=#{obj.id}
+    </update>
+
+    <update id="updateParentIfNeeded">
+        { call update_case_parent_if_needed(
+            #{pId,mode=IN,jdbcType=INTEGER}
+        )}
+    </update>
+
+    <update id="changeContentTypePers">
+        UPDATE TstCase
+        SET contentType=#{contentType}
+        WHERE id=#{id}
+    </update>
+
+    <update id="reviewResult">
+        UPDATE TstCase
+        SET reviewResult=#{result}
+        WHERE id=#{id}
+    </update>
+    <update id="delete">
+        { call remove_case_and_its_children(#{pId,mode=IN,jdbcType=INTEGER}) }
+    </update>
+    <update id="updateProp" statementType="STATEMENT">
+        UPDATE TstCase
+        SET ${prop} = '${value}'
+        WHERE id=${id}
+    </update>
+
+    <update id="addOrderForTargetAndNextCases">
+        update TstCase c
+        set c.ordr = c.ordr+1
+        where c.ordr >= #{targetOrdr} and c.pId=#{targetPid} and id!=#{srcId}
+    </update>
+    <update id="addOrderForNextCases">
+        update TstCase c
+        set c.ordr = c.ordr+1
+        where c.ordr > #{targetOrdr} and c.pId=#{targetPid} and id!=#{srcId}
+    </update>
+
+    <update id="moveUpdate">
+        update TstCase c
+        set c.pId = #{pId}, c.ordr = #{ordr}
+        where c.id=#{id}
+    </update>
+    <insert id="moveCopy" parameterType="TstCase" useGeneratedKeys="true" keyProperty="id">
+        insert into TstCase
+        (name,priority,type,contentType,estimate,isLeaf,ordr,pId,
+            projectId,createById,
+            createTime,deleted,disabled)
+        values
+          (#{name},#{priority},#{type},#{contentType},#{estimate},#{isLeaf},#{ordr},#{pId},
+              #{projectId},#{createById},
+              NOW(),FALSE,FALSE)
+    </insert>
+
+    <select id="getChildren" resultType="TstCase">
+        select * from TstCase o
+        where o.pId=#{id}
+        and o.deleted != true
+        and o.disabled != true
+
+        ORDER BY o.pId, o.ordr
+    </select>
+
+    <resultMap id="caseMaps" type="TstCase" autoMapping="true">
+        <id column="id" property="id"/>
+
+        <collection property="steps" select="com.ngtesting.platform.dao.CaseStepDao.listByCaseId"
+                    column="{id=id}">
+        </collection>
+
+        <collection property="histories" select="com.ngtesting.platform.dao.CaseHistoryDao.listByCaseId"
+                    column="{id=id}">
+        </collection>
+
+        <collection property="comments" select="com.ngtesting.platform.dao.CaseCommentsDao.listByCaseId"
+                    column="{id=id}">
+        </collection>
+
+        <collection property="attachments" select="com.ngtesting.platform.dao.CaseAttachmentDao.listByCaseId"
+                    column="{id=id}">
+        </collection>
+    </resultMap>
 
 </mapper>

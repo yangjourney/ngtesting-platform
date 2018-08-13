@@ -1,14 +1,15 @@
 package com.ngtesting.platform.action;
 
 import com.alibaba.fastjson.JSONObject;
-import com.ngtesting.platform.bean.websocket.OptFacade;
+import com.github.pagehelper.PageHelper;
+import com.ngtesting.platform.bean.websocket.WsFacade;
 import com.ngtesting.platform.config.Constant;
+import com.ngtesting.platform.config.WsConstant;
 import com.ngtesting.platform.model.*;
 import com.ngtesting.platform.service.TestEnvService;
 import com.ngtesting.platform.service.TestPlanService;
 import com.ngtesting.platform.service.TestSuiteService;
 import com.ngtesting.platform.service.TestVerService;
-import com.ngtesting.platform.vo.Page;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -26,7 +27,7 @@ import java.util.Map;
 @RequestMapping(Constant.API_PATH_CLIENT + "plan/")
 public class PlanAction extends BaseAction {
 	@Autowired
-	private OptFacade optFacade;
+	private WsFacade optFacade;
 
 	@Autowired
 	TestPlanService planService;
@@ -43,35 +44,33 @@ public class PlanAction extends BaseAction {
 	public Map<String, Object> query(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
 
-        int page = json.getInteger("page") == null? 0: json.getInteger("page") - 1;
-        int pageSize = json.getInteger("pageSize") == null? Constant.PAGE_SIZE: json.getInteger("pageSize");
+		Integer projectId = json.getInteger("projectId");
 
-        Integer projectId = json.getInteger("projectId");
-        String status = json.getString("status");
-        String keywords = json.getString("keywords");
+		String keywords = json.getString("keywords");
+		String status = json.getString("status");
+		Integer pageNum = json.getInteger("page");
+		Integer pageSize = json.getInteger("pageSize");
 
-        Page pageData = planService.page(projectId, status, keywords, page, pageSize);
-        List<TstPlan> vos = planService.genVos(pageData.getItems());
+		com.github.pagehelper.Page page = PageHelper.startPage(pageNum, pageSize);
+        List<TstPlan> pos = planService.listByPage(projectId, keywords, status);
+        planService.genVos(pos);
 
-        ret.put("collectionSize", pageData.getTotal());
-        ret.put("data", vos);
+		ret.put("total", page.getTotal());
+        ret.put("data", pos);
 		ret.put("code", Constant.RespCode.SUCCESS.getCode());
 		return ret;
 	}
-
 
     @RequestMapping(value = "get", method = RequestMethod.POST)
     @ResponseBody
     public Map<String, Object> get(HttpServletRequest request, @RequestBody JSONObject json) {
         Map<String, Object> ret = new HashMap<String, Object>();
 
-        TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
 		Integer projectId = json.getInteger("projectId");
         Integer id = json.getInteger("id");
 
 		TstPlan vo = planService.getById(id);
-		List<TstSuite> ls = suiteService.query(projectId, null);
-		List<TstSuite> suites = suiteService.genVos(ls);
+		List<TstSuite> suites = suiteService.listForImport(projectId);
 
 		List<TstVer> vers = verService.list(projectId, null, null);
 		List<TstEnv> envs = envService.list(projectId, null, null);
@@ -93,11 +92,11 @@ public class PlanAction extends BaseAction {
 		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
 
 		TstPlan po = planService.save(json, userVo);
-		TstPlan vo = planService.genVo(po);
+		planService.genVo(po);
 
-//		optFacade.opt(WsConstant.WS_TODO, userVo.getId().toString());
+		optFacade.opt(WsConstant.WS_TODO, userVo);
 
-		ret.put("data", vo);
+		ret.put("data", po);
 		ret.put("code", Constant.RespCode.SUCCESS.getCode());
 		return ret;
 	}
@@ -112,7 +111,7 @@ public class PlanAction extends BaseAction {
 
 		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
 
-		TstPlan po = planService.delete(id, userVo.getId());
+		planService.delete(id, userVo.getId());
 
 		ret.put("code", Constant.RespCode.SUCCESS.getCode());
 		return ret;

@@ -11,6 +11,7 @@ import com.ngtesting.platform.service.*;
 import com.ngtesting.platform.utils.StringUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.List;
@@ -35,6 +36,8 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private AccountService accountService;
     @Autowired
+    private AccountVerifyCodeService accountVerifyCodeService;
+    @Autowired
     private ProjectService projectService;
     @Autowired
     OrgGroupUserRelationService orgGroupUserRelationService;
@@ -42,7 +45,7 @@ public class UserServiceImpl implements UserService {
     OrgRoleUserRelationService orgRoleUserService;
 
     @Override
-    public List<TstUser> list(Integer orgId, String keywords, String disabled, int pageNum, int pageSize) {
+    public List<TstUser> list(Integer orgId, String keywords, Boolean disabled, int pageNum, int pageSize) {
         List<TstUser> users = userDao.query(orgId, keywords, disabled);
 
         return users;
@@ -50,7 +53,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<TstUser> listAllOrgUsers(Integer orgId) {
-        List<TstUser> ls = userDao.query(orgId, null, "false");
+        List<TstUser> ls = userDao.query(orgId, null, false);
+
+        return ls;
+    }
+
+    @Override
+    public List<TstUser> getProjectUsers(Integer orgId, Integer projectId) {
+        List<TstUser> ls = userDao.getProjectUsers(projectId);
 
         return ls;
     }
@@ -80,6 +90,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public TstUser invitePers(TstUser user, TstUser vo, List<TstOrgGroupUserRelation> relations) {
         Integer orgId = user.getDefaultOrgId();
         Integer prjId = user.getDefaultPrjId();
@@ -120,7 +131,7 @@ public class UserServiceImpl implements UserService {
 
             String url;
             if (isNew) {
-                String verifyCode = accountService.genVerifyCode(vo.getId());
+                String verifyCode = accountVerifyCodeService.genVerifyCode(vo.getId());
 
                 url = propService.getUrlResetPassword();
                 if (!url.startsWith("http")) {
@@ -186,6 +197,18 @@ public class UserServiceImpl implements UserService {
         List<TstUser> users = userDao.search(orgId, keywords, exceptIds);
 
         return users;
+    }
+
+    @Override
+    public TstUser setLeftSizePers(TstUser user, Integer left, String prop) {
+        if ("case".equals(prop)) {
+            user.setLeftSizeCase(left);
+        } else if ("issue".equals(prop)) {
+            user.setLeftSizeIssue(left);
+        }
+
+        userDao.setLeftSize(user);
+        return user;
     }
 
 }

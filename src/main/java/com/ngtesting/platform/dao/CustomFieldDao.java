@@ -6,9 +6,14 @@ import org.apache.ibatis.annotations.Param;
 import java.util.List;
 
 public interface CustomFieldDao {
-    List list(@Param("orgId") Integer orgId);
+    List<TstCustomField> list(@Param("orgId") Integer orgId);
+    List<TstCustomField> listForCaseByProject(@Param("orgId")Integer orgId,
+                                              @Param("projectId")Integer projectId,
+                                              @Param("applyTo")String applyTo);
+
 
     TstCustomField get(@Param("id") Integer id);
+    TstCustomField getDetail(@Param("id") Integer id);
 
     List<String> getLastUnusedColumn(@Param("orgId") Integer orgId);
 

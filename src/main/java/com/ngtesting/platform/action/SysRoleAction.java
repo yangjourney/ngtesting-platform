@@ -33,8 +33,8 @@ public class SysRoleAction extends BaseAction {
 		Integer orgId = json.getInteger("orgId");
 
 		String keywords = json.getString("keywords");
-		String disabled = json.getString("disabled");
-		int page = json.getInteger("page") == null? 0: json.getInteger("page") - 1;
+		Boolean disabled = json.getBoolean("disabled");
+		int page = json.getInteger("listByPage") == null? 0: json.getInteger("listByPage") - 1;
 		int pageSize = json.getInteger("pageSize") == null? Constant.PAGE_SIZE: json.getInteger("pageSize");
 
 		Page pageData = roleService.listByPage(orgId, keywords, disabled, page, pageSize);
@@ -54,7 +54,7 @@ public class SysRoleAction extends BaseAction {
 
 		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
 
-//		SysRole po = (SysRole) roleService.get(SysRole.class, Integer.valueOf(accountId));
+//		SysRole po = (SysRole) roleService.getDetail(SysRole.class, Integer.valueOf(accountId));
 //		SysRole vo = roleService.genVo(po);
 //
 //        ret.put("data", vo);

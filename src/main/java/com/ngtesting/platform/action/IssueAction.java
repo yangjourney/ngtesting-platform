@@ -57,45 +57,6 @@ public class IssueAction extends BaseAction {
 		return ret;
 	}
 
-
-	@RequestMapping(value = "queryForSuiteSelection", method = RequestMethod.POST)
-	@ResponseBody
-	public Map<String, Object> queryForSuiteSelection(HttpServletRequest request, @RequestBody JSONObject json) {
-		Map<String, Object> ret = new HashMap<String, Object>();
-
-		Integer projectId = json.getInteger("projectId");
-        Integer caseProjectId = json.getInteger("caseProjectId");
-		Integer suiteId = json.getInteger("suiteId");
-
-//        List<TstCase> vos = issueService.queryForSuiteSelection(projectId, caseProjectId, suiteId);
-		List<TstProject> projects = projectService.listBrothers(projectId);
-
-//		ret.put("data", vos);
-		ret.put("brotherProjects", projects);
-		ret.put("code", Constant.RespCode.SUCCESS.getCode());
-		return ret;
-	}
-
-
-	@RequestMapping(value = "queryForRunSelection", method = RequestMethod.POST)
-	@ResponseBody
-	public Map<String, Object> queryForRunSelection(HttpServletRequest request, @RequestBody JSONObject json) {
-		Map<String, Object> ret = new HashMap<String, Object>();
-
-		Integer projectId = json.getInteger("projectId");
-        Integer caseProjectId = json.getInteger("caseProjectId");
-		Integer runId = json.getInteger("runId");
-
-//		List<TstCase> vos = issueService.queryForRunSelection(projectId, caseProjectId, runId);
-		List<TstProject> projects = projectService.listBrothers(projectId);
-
-//		ret.put("data", vos);
-		ret.put("brotherProjects", projects);
-		ret.put("code", Constant.RespCode.SUCCESS.getCode());
-		return ret;
-	}
-
-
     @RequestMapping(value = "get", method = RequestMethod.POST)
     @ResponseBody
     public Map<String, Object> get(HttpServletRequest request, @RequestBody JSONObject json) {
@@ -171,7 +132,7 @@ public class IssueAction extends BaseAction {
 		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
 
         Integer srcId = json.getInteger("srcId");
-//        Integer parentId = issueService.getById(srcId).getpId();
+//        Integer parentId = issueService.getWithCasesById(srcId).getpId();
 //        Integer targetId = json.getInteger("targetId");
 //        TstCaseVo vo = issueService.movePers(json, userVo);
 //
@@ -223,7 +184,7 @@ public class IssueAction extends BaseAction {
 		Integer id = json.getInteger("id");
 		Boolean pass = json.getBoolean("pass");
 
-//		TstCase po = issueService.reviewPassPers(id, pass);
+//		TstCase po = issueService.reviewResult(id, pass);
 //        TstCaseVo caseVo = issueService.genVo(po);
 //
 //        ret.put("reviewResult", caseVo);

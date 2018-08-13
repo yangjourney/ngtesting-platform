@@ -7,12 +7,11 @@ import java.util.List;
 
 public interface OrgService extends BaseService {
 
-	List<TstOrg> list(Integer userId, String keywords, String disabled);
+	List<TstOrg> list(Integer userId, String keywords, Boolean disabled);
 	List<TstOrg> listByUser(Integer userId);
 
 	TstOrg get(Integer id);
 
-    Boolean disable(Integer id);
 	Boolean delete(Integer id);
 
 	void genVos(List<TstOrg> pos, Integer userId);

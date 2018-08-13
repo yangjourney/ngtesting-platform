@@ -8,7 +8,7 @@ import java.util.List;
 public interface UserDao {
     List<TstUser> query(@Param("orgId") Integer orgId,
                         @Param("keywords") String keywords,
-                        @Param("disabled") String disabled);
+                        @Param("disabled") Boolean disabled);
 
     List<TstUser> search(@Param("orgId") Integer orgId,
                          @Param("keywords") String keywords,
@@ -31,4 +31,9 @@ public interface UserDao {
     void setDefaultPrj(@Param("id") Integer id,
                        @Param("prjId") Integer prjId,
                        @Param("prjName") String prjName);
+
+    void setLeftSize(TstUser user);
+
+    List<TstUser> getProjectUsers(@Param("prjId") Integer prjId);
+
 }

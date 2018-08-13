@@ -24,9 +24,9 @@ public class IssueDocumentServiceImpl extends BaseServiceImpl implements IssueDo
 //        dc.add(Restrictions.eq("deleted", Boolean.FALSE));
 //        dc.add(Restrictions.eq("disabled", Boolean.FALSE));
 //        dc.addOrder(Order.asc("id"));
-//        Page page = findPage(dc, currentPage * itemsPerPage, itemsPerPage);
+//        Page listByPage = findPage(dc, currentPage * itemsPerPage, itemsPerPage);
 //
-//        return page;
+//        return listByPage;
 
 		return null;
 	}
@@ -39,7 +39,7 @@ public class IssueDocumentServiceImpl extends BaseServiceImpl implements IssueDo
 //
 //		Document po = new Document();
 //		if (vo.getId() != null) {
-//			po = (Document) get(Document.class, vo.getId());
+//			po = (Document) getDetail(Document.class, vo.getId());
 //		}
 //
 //		po.setEventId(vo.getEventId());
@@ -54,7 +54,7 @@ public class IssueDocumentServiceImpl extends BaseServiceImpl implements IssueDo
 
 	@Override
 	public boolean remove(Integer id) {
-//		Document po = (Document) get(Document.class, id);
+//		Document po = (Document) getDetail(Document.class, id);
 //		po.setDeleted(true);
 //		saveOrUpdate(po);
 
@@ -74,7 +74,7 @@ public class IssueDocumentServiceImpl extends BaseServiceImpl implements IssueDo
 	public Document genVo(Document po) {
 
     	Document vo = new Document();
-    	BeanUtilEx.copyProperties(vo, po);
+    	BeanUtilEx.copyProperties(po, vo);
 
 		return vo;
 	}

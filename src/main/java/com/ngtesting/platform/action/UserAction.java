@@ -1,6 +1,7 @@
 package com.ngtesting.platform.action;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,7 +45,7 @@ public class UserAction {
     @Autowired
     ProjectPrivilegeService projectPrivilegeService;
 
-    @RequestMapping(value = "list", method = RequestMethod.POST)
+    @PostMapping(value = "list")
     @ResponseBody
     public Map<String, Object> list(HttpServletRequest request, @RequestBody JSONObject json) {
         Map<String, Object> ret = new HashMap<String, Object>();
@@ -52,7 +54,7 @@ public class UserAction {
         Integer orgId = user.getDefaultOrgId();
 
         String keywords = json.getString("keywords");
-        String disabled = json.getString("disabled");
+        Boolean disabled = json.getBoolean("disabled");
         Integer pageNum = json.getInteger("page");
         Integer pageSize = json.getInteger("pageSize");
 
@@ -61,6 +63,23 @@ public class UserAction {
 
         ret.put("total", page.getTotal());
         ret.put("data", users);
+        ret.put("code", Constant.RespCode.SUCCESS.getCode());
+        return ret;
+    }
+
+    @PostMapping(value = "getUsers")
+    @ResponseBody
+    public Map<String, Object> getUsers(HttpServletRequest request, @RequestBody JSONObject json) {
+        Map<String, Object> ret = new HashMap<String, Object>();
+
+        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
+        Integer orgId = user.getDefaultOrgId();
+
+        Integer projectId = json.getInteger("projectId");
+
+        List <TstUser> vos = userService.getProjectUsers(orgId, projectId);
+
+        ret.put("data", vos);
         ret.put("code", Constant.RespCode.SUCCESS.getCode());
         return ret;
     }
@@ -127,7 +146,7 @@ public class UserAction {
         List<TstProjectAccessHistory> recentProjects = projectService.listRecentProject(orgId, userId);
         ret.put("recentProjects", recentProjects);
 
-//        user.setDefaultPrjId(recentProjects.size() > 0?recentProjects.get(0).getPrjId(): null);
+//        user.setDefaultPrjId(recentProjects.size() > 0?recentProjects.getDetail(0).getPrjId(): null);
 
         Map<String, Boolean> prjPrivileges = projectPrivilegeService.listByUser(userId, prjId, orgId);
         ret.put("prjPrivileges", prjPrivileges);
@@ -179,18 +198,70 @@ public class UserAction {
         Integer orgId = user.getDefaultOrgId();
 
         TstUser vo = JSON.parseObject(JSON.toJSONString(json.get("user")), TstUser.class);
+
+        TstUser existUser = userService.getByEmail(vo.getEmail());
+
+        if (existUser != null && existUser.getId() != vo.getId()) {
+            ret.put("code", Constant.RespCode.BIZ_FAIL.getCode());
+            ret.put("msg", "邮箱已被占用");
+            return ret;
+        }
+
         userService.update(vo);
-//
-//        if (po == null) {
-//            ret.put("code", Constant.RespCode.BIZ_FAIL.getCode());
-//            ret.put("msg", "邮箱已存在");
-//            return ret;
-//        }
 
         List<TstOrgGroupUserRelation> relations = (List<TstOrgGroupUserRelation>) json.get("relations");
         orgGroupUserRelationService.saveRelationsForUser(orgId, vo.getId(), relations);
         ret.put("code", Constant.RespCode.SUCCESS.getCode());
 
+        return ret;
+    }
+
+    @PostMapping(value = "search")
+    @ResponseBody
+    public Map<String, Object> search(HttpServletRequest request, @RequestBody JSONObject json) {
+        Map<String, Object> ret = new HashMap<String, Object>();
+
+        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
+
+        Integer orgId = json.getInteger("orgId");
+        String keywords = json.getString("keywords");
+        JSONArray exceptIds = json.getJSONArray("exceptIds");
+
+        String ids = "";
+        if (exceptIds != null && exceptIds.size() > 0) {
+            int i = 0;
+            for (Object item : exceptIds.toArray()) {
+                if (i++ > 0) {
+                    ids += ",";
+                }
+                ids += item.toString();
+            }
+        }
+
+        List users = userService.search(orgId, keywords, ids);
+
+        List<Object> vos = new ArrayList<>();
+        vos.addAll(users);
+
+        ret.put("data", vos);
+        ret.put("code", Constant.RespCode.SUCCESS.getCode());
+        return ret;
+    }
+
+    @PostMapping(value = "setLeftSize")
+    @ResponseBody
+    public Map<String, Object> setLeftSize(HttpServletRequest request, @RequestBody JSONObject json) {
+        Map<String, Object> ret = new HashMap<String, Object>();
+
+        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
+
+        Integer left = json.getInteger("left");
+        String prop = json.getString("prop");
+
+        user = userService.setLeftSizePers(user, left, prop);
+
+        ret.put("data", user);
+        ret.put("code", Constant.RespCode.SUCCESS.getCode());
         return ret;
     }
 

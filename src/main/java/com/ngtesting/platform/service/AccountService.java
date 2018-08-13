@@ -5,12 +5,12 @@ import com.ngtesting.platform.model.TstUser;
 public interface AccountService {
     TstUser register(TstUser user);
     TstUser login(String email, String password, Boolean rememberMe);
-    TstUser logout(String email);
-    boolean changePassword(Integer userId, String oldPassword, String password);
+    Boolean logout(String email);
+    Boolean changePassword(Integer userId, String oldPassword, String password);
 
-    boolean checkResetPassword(String verifyCode);
-    TstUser resetPasswordPers(String verifyCode, String password);
+    String forgotPassword(TstUser user);
+    Boolean beforResetPassword(String verifyCode);
+    TstUser resetPassword(String verifyCode, String password);
 
-    String genVerifyCode(Integer userId);
-
+    TstUser loginWithVerifyCode(String vcode);
 }

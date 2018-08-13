@@ -2,37 +2,150 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="com.ngtesting.platform.dao.TestTaskDao" >
 
-    <select id="listByPlan" resultMap="testTaskWithAssignees">
+    <select id="listByPlan" resultMap="taskMap">
         SELECT task.*,
-          user.id userId, user.name userName,
-          project.id projectId, project.name projectName,
-          caseProject.id caseProjectId, caseProject.name caseProjectName,
-          env.id envId, env.name envName,
-          assignee.id assigneeId, assignee.nickname assigneeNickname, assignee.avatar assigneeAvatar
+          usr.nickname userName,
+          project.name projectName,
+          caseProject.name caseProjectName,
+          env.name envName
 
         FROM TstTask task
 
-        JOIN TstUser user ON task.userId = user.id
+        JOIN TstUser usr ON task.userId = usr.id
         JOIN TstProject project ON task.projectId = project.id
-        JOIN TstProject caseProject ON task.caseProjectId = caseProject.id
-        LEFT JOIN TestEnv env ON task.envId = env.id
+        LEFT JOIN TstProject caseProject ON task.caseProjectId = caseProject.id
+        LEFT JOIN TstEnv env ON task.envId = env.id
 
-        LEFT JOIN TstRTaskAssignee r on r.taskId = task.id
-        LEFT JOIN TstUser assignee on r.assigneeId = assignee.id
-
-        WHERE o.userId=#{userId}
-        AND o.deleted != TRUE AND o.disabled != TRUE
-        ORDER BY o.createTime DESC
+        WHERE task.planId=#{planId}
+        AND task.deleted != TRUE AND task.disabled != TRUE
+        ORDER BY task.createTime ASC
     </select>
 
-    <resultMap type="TstTask" id="testTask" autoMapping="true"></resultMap>
+    <select id="getDetail" resultMap="taskMap">
+        SELECT task.*,
+        usr.nickname userName,
+        project.name projectName,
+        caseProject.name caseProjectName,
+        env.name envName,
+        assignee.id assigneeId, assignee.nickname assigneeNickname, assignee.avatar assigneeAvatar
 
-    <resultMap type="TstTask" id="testTaskWithAssignees" extends="testTask">
-        <collection property="assignees" ofType="TstUser">
-            <id property="id" column="assigneeId" />
-            <result property="nickname" column="assigneeNickname" />
-            <result property="avatar" column="assigneeAvatar" />
+        FROM TstTask task
+
+        JOIN TstUser usr ON task.userId = usr.id
+        JOIN TstProject project ON task.projectId = project.id
+        LEFT JOIN TstProject caseProject ON task.caseProjectId = caseProject.id
+        LEFT JOIN TstEnv env ON task.envId = env.id
+
+        LEFT JOIN TstTaskAssigneeRelation r on r.taskId = task.id
+        LEFT JOIN TstUser assignee on r.assigneeId = assignee.id
+
+        WHERE task.id=#{id}
+    </select>
+
+    <select id="get" resultType="TstTask">
+        SELECT task.*  FROM TstTask task
+        WHERE task.id=#{id}
+    </select>
+
+    <select id="listCaseIds" resultType="int">
+        SELECT o.caseId
+        FROM TstCaseInTask o
+
+        WHERE o.taskId=#{id}
+        AND o.deleted != TRUE AND o.disabled != TRUE
+        ORDER BY o.pId, o.id
+    </select>
+
+    <insert id="save" parameterType="TstTask" useGeneratedKeys="true" keyProperty="id">
+        insert into TstTask
+        (name,status,projectId,caseProjectId,planId,envId,userId,
+          deleted,disabled,createTime)
+        values
+        (#{name},#{status},#{projectId},#{caseProjectId},#{planId},#{envId},#{userId},
+          FALSE,FALSE,NOW())
+    </insert>
+
+    <update id="update" parameterType="TstTask">
+        UPDATE TstTask
+        SET name=#{name},envId=#{envId},
+        updateTime=NOW()
+
+        WHERE id=#{id}
+    </update>
+    <update id="updateCaseProject">
+        UPDATE TstTask SET caseProjectId=#{caseProjectId}, updateTime=NOW()
+        WHERE id=#{id}
+    </update>
+
+    <delete id="delete">
+        UPDATE TstTask SET deleted=TRUE, userId=#{userId}, updateTime=NOW()
+        WHERE id=#{id}
+    </delete>
+    <delete id="close">
+        UPDATE TstTask SET status='end', userId=#{userId}, updateTime=NOW()
+        WHERE id=#{id}
+    </delete>
+
+    <delete id="removeAssignees">
+        DELETE FROM TstTaskAssigneeRelation
+        WHERE taskId = #{id}
+    </delete>
+    <insert id="saveAssignees">
+        insert into TstTaskAssigneeRelation (taskId,assigneeId)
+        values
+        <foreach collection="list" item="item" separator=",">
+            (#{id},#{item.id})
+        </foreach>
+    </insert>
+
+    <update id="addCasesBySuites" statementType="CALLABLE">
+        { call add_cases_to_task_by_suites(
+              #{taskId,mode=IN,jdbcType=INTEGER},
+              #{suiteIds,mode=IN,jdbcType=VARCHAR}
+        ) }
+    </update>
+    <update id="addCases" statementType="CALLABLE">
+        { call add_cases_to_task(
+            #{taskId,mode=IN,jdbcType=INTEGER},
+            #{caseIds,mode=IN,jdbcType=VARCHAR},
+            #{append,mode=IN,jdbcType=BOOLEAN}
+        ) }
+    </update>
+
+    <update id="start">
+        UPDATE TstTask o
+        SET o.status = 'in_progress'
+        WHERE o.id=#{id} AND o.status != 'in_progress'
+    </update>
+
+    <select id="countStatus" resultType="map">
+       select tcin.`status` status, count(tcin.id) `count`
+       from TstCaseInTask tcin
+       where tcin.taskId = #{id}
+        AND tcin.deleted != true AND tcin.disabled != true AND tcin.isLeaf = true
+       group by tcin.`status`
+    </select>
+
+    <resultMap id="taskMap" type="TstTask" autoMapping="true">
+        <id column="id" property="id"/>
+
+        <collection property="assignees" select="listAssigneesByTaskId"
+                    column="{id=id}">
         </collection>
+    </resultMap>
+    <select id="listAssigneesByTaskId" parameterType="Map" resultMap="assigneeMap">
+        SELECT o.* FROM TstUser o
+
+        LEFT JOIN TstTaskAssigneeRelation r on r.assigneeId = o.id
+
+        WHERE r.taskId = #{id}
+        AND o.deleted != true AND o.disabled != true
+
+        ORDER BY o.id ASC
+    </select>
+    <resultMap id="assigneeMap" type="TstUser" autoMapping="true">
+        <id column="id" property="id"/>
+        <id column="nickname" property="nickname"/>
     </resultMap>
 
 </mapper>

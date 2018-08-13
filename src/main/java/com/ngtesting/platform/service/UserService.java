@@ -6,7 +6,7 @@ import com.ngtesting.platform.model.TstUser;
 import java.util.List;
 
 public interface UserService {
-    List<TstUser> list(Integer orgId, String keywords, String disabled, int pageNum, int pageSize);
+    List<TstUser> list(Integer orgId, String keywords, Boolean disabled, int pageNum, int pageSize);
 
     List<TstUser> listAllOrgUsers(Integer orgId);
 
@@ -26,4 +26,7 @@ public interface UserService {
 
     List<TstUser> search(Integer orgId, String keywords, String exceptIds);
 
+    TstUser setLeftSizePers(TstUser user, Integer left, String prop);
+
+    List<TstUser> getProjectUsers(Integer orgId, Integer projectId);
 }

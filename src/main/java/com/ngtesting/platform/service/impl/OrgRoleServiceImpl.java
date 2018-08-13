@@ -16,7 +16,7 @@ public class OrgRoleServiceImpl extends BaseServiceImpl implements OrgRoleServic
     OrgRoleDao orgRoleDao;
 
 	@Override
-	public List<TstOrgRole> list(Integer orgId, String keywords, String disabled) {
+	public List<TstOrgRole> list(Integer orgId, String keywords, Boolean disabled) {
         List<TstOrgRole> ls = orgRoleDao.query(orgId, keywords, disabled);
 
 		return ls;
@@ -24,7 +24,7 @@ public class OrgRoleServiceImpl extends BaseServiceImpl implements OrgRoleServic
 
     @Override
     public List<TstOrgRole> listAllOrgRoles(Integer orgId) {
-        List<TstOrgRole> ls = orgRoleDao.query(orgId, null, "false");
+        List<TstOrgRole> ls = orgRoleDao.query(orgId, null, false);
 
         return ls;
     }
@@ -50,7 +50,7 @@ public class OrgRoleServiceImpl extends BaseServiceImpl implements OrgRoleServic
 
 	@Override
 	public boolean delete(Integer id) {
-//		TestOrgRole po = (TestOrgRole) get(TestOrgRole.class, id);
+//		TestOrgRole po = (TestOrgRole) getDetail(TestOrgRole.class, id);
 //		po.setDeleted(true);
 //		saveOrUpdate(po);
 

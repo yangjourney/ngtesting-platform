@@ -8,7 +8,7 @@ import java.util.List;
 public interface OrgDao {
     List<TstOrg> query(@Param("userId") Integer userId,
                            @Param("keywords") String keywords,
-                           @Param("disabled") String disabled);
+                           @Param("disabled") Boolean disabled);
 
     List<TstOrg> queryByUser(@Param("userId") Integer userId);
 
@@ -20,4 +20,6 @@ public interface OrgDao {
 
     void save(TstOrg vo);
     void update(TstOrg vo);
+
+    Integer delete(@Param("id") Integer id);
 }

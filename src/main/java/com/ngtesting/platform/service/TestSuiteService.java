@@ -1,42 +1,33 @@
 package com.ngtesting.platform.service;
 
 import com.alibaba.fastjson.JSONObject;
-import com.ngtesting.platform.model.TstCaseInSuite;
 import com.ngtesting.platform.model.TstSuite;
 import com.ngtesting.platform.model.TstUser;
-import com.ngtesting.platform.vo.Page;
 
 import java.util.List;
 
 public interface TestSuiteService extends BaseService {
 
-    Page page(Integer projectId, String keywords, Integer currentPage, Integer itemsPerPage);
-    List<TstSuite> query(Integer projectId, String keywords);
+	List listByPage(Integer projectId, String keywords, Boolean disabled);
 
-	TstSuite getById(Integer caseId);
+    List<TstSuite> listForImport(Integer projectId);
 
-	TstSuite getById(Integer caseId, Boolean withCases);
+    TstSuite get(Integer id);
 
-	TstSuite save(JSONObject json, TstUser optUser);
-	TstSuite delete(Integer vo, Integer userId);
+    TstSuite getWithCases(Integer id);
 
-	List<TstSuite> list(Integer projectId, String type);
+    TstSuite save(JSONObject json, TstUser optUser);
+	void delete(Integer vo, Integer userId);
 
-	List<TstSuite> genVos(List<TstSuite> pos);
+
 
     TstSuite saveCases(JSONObject json, TstUser optUser);
 
-	TstSuite saveCases(Integer projectId, Integer caseProjectId, Integer runId, Object[] ids, TstUser optUser);
+	TstSuite saveCases(Integer projectId, Integer caseProjectId, Integer runId, List<Integer> ids, TstUser optUser);
 
-	TstSuite genVo(TstSuite po);
+//  List<TstSuite> genVos(List<TstSuite> pos);
+//	TstSuite genVo(TstSuite po);
+//  TstSuite genVo(TstSuite po, Boolean withCases);
+//	TstCaseInSuite genCaseVo(TstCaseInSuite po);
 
-    TstSuite genVo(TstSuite po, Boolean withCases);
-
-    void addCasesPers(Integer suiteId, List<Integer> caseIds);
-
-    Integer countCase(Integer suiteId);
-
-	TstCaseInSuite genCaseVo(TstCaseInSuite po);
-
-    TstSuite updatePo(TstSuite vo);
 }

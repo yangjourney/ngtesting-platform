@@ -1,8 +1,11 @@
 package com.ngtesting.platform.service.impl;
 
 import com.ngtesting.platform.dao.AlertDao;
+import com.ngtesting.platform.dao.TestPlanDao;
 import com.ngtesting.platform.model.TstAlert;
+import com.ngtesting.platform.model.TstPlan;
 import com.ngtesting.platform.model.TstTask;
+import com.ngtesting.platform.model.TstUser;
 import com.ngtesting.platform.service.AlertService;
 import com.ngtesting.platform.utils.DateUtil;
 import com.ngtesting.platform.utils.StringUtil;
@@ -17,6 +20,9 @@ import java.util.List;
 public class AlertServiceImpl extends BaseServiceImpl implements AlertService {
     @Autowired
     private AlertDao alertDao;
+
+    @Autowired
+    private TestPlanDao planDao;
 
     @Override
     public List<TstAlert> list(Integer userId, Boolean isRead) {
@@ -40,8 +46,8 @@ public class AlertServiceImpl extends BaseServiceImpl implements AlertService {
     public List<TstAlert> genVos(List<TstAlert> pos) {
         List<TstAlert> vos = new LinkedList<>();
 
-        for (TstAlert run: pos) {
-            TstAlert vo = genVo(run);
+        for (TstAlert po: pos) {
+            TstAlert vo = genVo(po);
             vos.add(vo);
         }
         return vos;
@@ -58,59 +64,49 @@ public class AlertServiceImpl extends BaseServiceImpl implements AlertService {
         Date endTime = po.getEndTime();
 
         if (endTime != null && endTime.getTime() >= startTimeOfToday && endTime.getTime() <= endTimeOfToday) {
-            po.setTitle("任务" + StringUtil.highlightDict(po.getName()) + "完成");
+            po.setTitle("任务" + StringUtil.highlightDict(po.getTitle()) + "完成");
         } else {
-            po.setTitle("任务" + StringUtil.highlightDict(po.getName()) + "开始");
+            po.setTitle("任务" + StringUtil.highlightDict(po.getTitle()) + "开始");
         }
 
         return po;
     }
     @Override
-    public void saveAlert(TstTask run) {
+    public void create(TstTask task) {
+        for (TstUser assignee : task.getAssignees()) {
+            TstAlert po = getByTask(task.getId());;
+            if (po == null) {
+                po = new TstAlert();
+            }
 
-//        for (TestUser user : run.getAssignees()) {
-//            TstAlert po = getByRun(run.getId());;
-//            if (po == null) {
-//                po = new TstAlert();
-//            }
-//
-//            po.setType("run");
-//            po.setDescr(run.getDescr());
-//            po.setEntityId(run.getId());
-//            po.setEntityName(run.getName());
-//            po.setStatus(run.getStatus().toString());
-//            po.setRead(false);
-//            po.setUserId(run.getUserId());
-//            po.setAssigneeId(user.getId());
-//
-//            TestPlan plan = run.getPlan();
-//            if (plan == null || plan.getId() == null) {
-//                plan= (TestPlan)get(TestPlan.class, run.getPlanId());
-//            }
-//            po.setStartTime(plan.getStartTime());
-//            po.setEndTime(plan.getEndTime());
-//
-//            saveOrUpdate(po);
-//        }
+            po.setType("task");
+            po.setTitle(task.getName());
+
+            po.setEntityId(task.getId());
+
+            po.setUserId(task.getUserId());
+            po.setAssigneeId(assignee.getId());
+
+            TstPlan plan= planDao.get(task.getPlanId());
+
+            po.setStartTime(plan.getStartTime());
+            po.setEndTime(plan.getEndTime());
+
+            alertDao.create(po);
+        }
+
     }
 
     @Override
-    public void markAllReadPers(String idStr) {
-//        String hql = "update TstAlert alert set alert.isRead=true where alert.id IN (?) " +
-//                "AND alert.isRead != true AND alert.deleted != true AND alert.disabled != true";
-//
-//        List<Long> ids = new LinkedList();
-//        for (String str : idStr.split(",")) {
-//            ids.add(Long.valueOf(str));
-//        }
-//        getDao().executeByHql(hql, ids.toArray());
+    public void markAllReadPers(String ids) {
+        alertDao.markAllRead(ids);
     }
 
     @Override
-    public TstAlert getByRun(Integer id) {
+    public TstAlert getByTask(Integer id) {
 //        DetachedCriteria dc = DetachedCriteria.forClass(TstAlert.class);
 //
-//        dc.add(Restrictions.eq("type", "run"));
+//        dc.add(Restrictions.eq("type", "task"));
 //        dc.add(Restrictions.eq("entityId", id));
 //
 //        dc.add(Restrictions.eq("deleted", Boolean.FALSE));
@@ -120,7 +116,7 @@ public class AlertServiceImpl extends BaseServiceImpl implements AlertService {
 //
 //        List<TstAlert> pos = findAllByCriteria(dc);
 //        if (pos.size() > 0) {
-//            return pos.get(0);
+//            return pos.getDetail(0);
 //        } else {
 //            return null;
 //        }

@@ -42,7 +42,7 @@ public class OrgServiceImpl extends BaseServiceImpl implements OrgService {
     private UserDao userDao;
 
 	@Override
-	public List<TstOrg> list(Integer userId, String keywords, String disabled) {
+	public List<TstOrg> list(Integer userId, String keywords, Boolean disabled) {
         List<TstOrg> ls = orgDao.query(userId, keywords, disabled);
 
         genVos(ls, userId);
@@ -82,29 +82,10 @@ public class OrgServiceImpl extends BaseServiceImpl implements OrgService {
 	}
 
 	@Override
-	public Boolean disable(Integer id) {
-//		if (id == null) {
-//			return false;
-//		}
-//
-//		TstOrg po = (TstOrg) get(TstOrg.class, id);
-//		po.setDisabled(true);
-//		saveOrUpdate(po);
-
-		return true;
-	}
-
-	@Override
 	public Boolean delete(Integer id) {
-//		if (id == null) {
-//			return false;
-//		}
-//
-//		TstOrg po = (TstOrg) get(TstOrg.class, id);
-//		po.setDeleted(true);
-//		saveOrUpdate(po);
+		Integer count = orgDao.delete(id);
 
-		return true;
+		return count > 0;
 	}
 
 	@Override

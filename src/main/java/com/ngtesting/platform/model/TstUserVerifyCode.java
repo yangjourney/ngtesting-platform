@@ -2,11 +2,13 @@ package com.ngtesting.platform.model;
 
 import java.util.Date;
 
-public class TstVerifyCode {
+public class TstUserVerifyCode {
+    private Integer id;
+
     private String code;
     private Date expireTime;
 
-    private Long refId;
+    private Integer refId;
 
     public String getCode() {
         return code;
@@ -24,11 +26,19 @@ public class TstVerifyCode {
         this.expireTime = expireTime;
     }
 
-    public Long getRefId() {
+    public Integer getRefId() {
         return refId;
     }
 
-    public void setRefId(Long refId) {
+    public void setRefId(Integer refId) {
         this.refId = refId;
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
     }
 }

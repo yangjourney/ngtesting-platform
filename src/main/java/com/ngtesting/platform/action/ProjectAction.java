@@ -93,14 +93,14 @@ public class ProjectAction {
         TstProject vo = projectService.genVo(po, null);
 
         List<TstPlan> planPos = planService.listByProject(id, vo.getType());
-        List<TstPlan> planVos = planService.genVos(planPos);
+        planService.genVos(planPos);
 
         List<TstHistory> historyPos = historyService.listByProject(id, vo.getType());
         Map<String, List<TstHistory>> historyVos = historyService.genVosByDate(historyPos);
 
         ret.put("code", Constant.RespCode.SUCCESS.getCode());
         ret.put("project", vo);
-        ret.put("plans", planVos);
+        ret.put("plans", planPos);
         ret.put("histories", historyVos);
 
         return ret;
@@ -147,6 +147,22 @@ public class ProjectAction {
         pushSettingsService.pushPrjSettings(user);
 
         ret.put("data", vo);
+        ret.put("code", Constant.RespCode.SUCCESS.getCode());
+        return ret;
+    }
+
+    @PostMapping(value = "delete")
+    @ResponseBody
+    public Map<String, Object> delete(HttpServletRequest request, @RequestBody JSONObject json) {
+        Map<String, Object> ret = new HashMap<String, Object>();
+        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
+        Integer id = json.getInteger("id");
+
+        projectService.delete(id, user.getId());
+
+        pushSettingsService.pushRecentProjects(user);
+        pushSettingsService.pushPrjSettings(user);
+
         ret.put("code", Constant.RespCode.SUCCESS.getCode());
         return ret;
     }

@@ -3,12 +3,140 @@
 <mapper namespace="com.ngtesting.platform.dao.TestSuiteDao" >
 
     <select id="query" resultType="TstSuite">
-        SELECT * FROM TstAlert o WHERE o.userId=#{userId}
-        <if test="isRead != null">
-            AND o.isRead = #{isRead}
+        SELECT o.*, usr.nickname userName, prj.name projectName, casePrj.name caseProjectName
+        FROM TstSuite o
+
+        JOIN TstUser usr ON usr.id=o.userId
+        JOIN TstProject prj ON prj.id=o.projectId
+        JOIN TstProject casePrj ON casePrj.id=o.caseProjectId
+
+        WHERE o.projectId = #{projectId}
+        <if test="keywords != null and keywords != ''">
+            AND o.name LIKE CONCAT('%','${keywords}','%' )
         </if>
-        AND o.deleted != true AND o.disabled != true
-        ORDER BY o.createTime DESC
+        <if test="disabled != null and disabled != ''">
+            AND o.disabled = #{disabled}
+        </if>
+
+        AND o.deleted != TRUE
+        ORDER BY o.id ASC
     </select>
+
+    <select id="listForImport" resultType="TstSuite">
+        SELECT o.id, o.name, o.projectId, o.caseProjectId,
+          prj.name projectName, casePrj.name caseProjectName, usr.nickname userName,
+        ( SELECT count(cs.id) FROM TstCaseInSuite cs
+                                WHERE cs.suiteId = o.id AND isLeaf=TRUE AND cs.deleted != true AND cs.disabled != true ) `count`
+
+        FROM TstSuite o
+
+        JOIN TstUser usr ON usr.id=o.userId
+        JOIN TstProject prj ON prj.id=o.projectId
+        JOIN TstProject casePrj ON casePrj.id=o.caseProjectId
+
+        WHERE o.projectId IN (
+            <foreach collection="projectIds" item="item" separator=",">
+                #{item}
+            </foreach>)
+        AND o.deleted != TRUE AND o.disabled != TRUE
+        AND prj.deleted != TRUE AND prj.disabled != TRUE
+        AND casePrj.deleted != TRUE AND casePrj.disabled != TRUE
+
+        ORDER BY o.caseProjectId ASC, o.id ASC
+    </select>
+
+    <insert id="save" parameterType="TstSuite" useGeneratedKeys="true" keyProperty="id">
+        insert into TstSuite
+        (name,estimate,descr,
+          projectId,caseProjectId,userId,
+          deleted,disabled,createTime)
+        values
+          (#{name},#{estimate},#{descr},#{projectId},#{caseProjectId},#{userId},
+          FALSE,FALSE,NOW())
+    </insert>
+
+    <update id="update" parameterType="TstSuite">
+        UPDATE TstSuite
+        SET name=#{name},estimate=#{estimate},descr=#{descr},
+        projectId=#{projectId},caseProjectId=#{caseProjectId},userId=#{userId},
+        disabled=#{disabled},
+        updateTime=NOW()
+
+        WHERE id=#{id}
+    </update>
+
+    <select id="get" resultType="TstSuite">
+        SELECT o.*, usr.nickname userName, prj.name projectName, casePrj.name caseProjectName,
+                    ( SELECT count(cs.id) FROM TstCaseInSuite cs
+                                WHERE cs.suiteId = o.id AND isLeaf=TRUE AND cs.deleted != true AND cs.disabled != true ) `count`
+
+        FROM TstSuite o
+
+        JOIN TstUser usr ON usr.id=o.userId
+        JOIN TstProject prj ON prj.id=o.projectId
+        JOIN TstProject casePrj ON casePrj.id=o.caseProjectId
+
+        WHERE o.id = #{id}
+    </select>
+
+    <update id="delete">
+        UPDATE TstSuite
+        SET deleted = TRUE
+        WHERE id=#{id}
+    </update>
+
+    <select id="listCaseIds" resultType="int">
+        SELECT o.id
+        FROM TstCaseInSuite o
+
+        WHERE o.suiteId=#{id}
+        AND o.deleted != TRUE AND o.disabled != TRUE
+        ORDER BY o.pId, o.id
+    </select>
+
+    <update id="updateSuiteProject">
+        UPDATE TstSuite
+        SET projectId=#{projectId},caseProjectId=#{caseProjectId},userId=#{userId},
+        updateTime=NOW()
+
+        WHERE id=#{id}
+    </update>
+    <update id="addCases">
+        { call add_cases_to_suite(#{suiteId,mode=IN,jdbcType=INTEGER},
+                                  #{caseIds,mode=IN,jdbcType=VARCHAR}) }
+    </update>
+
+    <select id="getWithCases" resultMap="testSuiteMaps">
+        SELECT o.*, prj.name projectName, casePrj.name caseProjectName
+                    ( SELECT count(cs.id) FROM TstCaseInSuite cs
+                                WHERE cs.suiteId = o.id AND cs.deleted != true AND cs.disabled != true ) `count`
+
+        FROM TstSuite o
+
+        JOIN TstProject prj ON prj.id=o.projectId
+        JOIN TstProject casePrj ON casePrj.id=o.caseProjectId
+
+        WHERE o.id = #{id}
+    </select>
+    <select id="listTestCases" parameterType="Map" resultMap="testCaseMaps">
+        SELECT o.* FROM TstCaseInSuite o
+
+        WHERE o.suiteId = #{id}
+        AND o.deleted != true AND o.disabled != true
+
+        ORDER BY o.ordr ASC
+    </select>
+
+    <resultMap id="testSuiteMaps" type="TstSuite" autoMapping="true">
+        <id column="id" property="id"/>
+
+        <collection property="testCases" select="listTestCases"
+                    column="{id=id}">
+        </collection>
+    </resultMap>
+    <resultMap id="testCaseMaps" type="TstCaseInSuite" autoMapping="true">
+        <id column="id" property="id"/>
+        <id column="name" property="name"/>
+    </resultMap>
 
 </mapper>

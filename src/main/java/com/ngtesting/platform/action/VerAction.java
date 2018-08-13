@@ -1,7 +1,7 @@
 package com.ngtesting.platform.action;
 
 import com.alibaba.fastjson.JSONObject;
-import com.ngtesting.platform.bean.websocket.OptFacade;
+import com.ngtesting.platform.bean.websocket.WsFacade;
 import com.ngtesting.platform.config.Constant;
 import com.ngtesting.platform.model.TstUser;
 import com.ngtesting.platform.model.TstVer;
@@ -23,7 +23,7 @@ import java.util.Map;
 @RequestMapping(Constant.API_PATH_CLIENT + "ver/")
 public class VerAction extends BaseAction {
 	@Autowired
-	private OptFacade optFacade;
+	private WsFacade optFacade;
 
 	@Autowired
 	TestVerService verService;
@@ -35,7 +35,7 @@ public class VerAction extends BaseAction {
 		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
 		Integer projectId = json.getInteger("projectId");
 		String keywords = json.getString("keywords");
-		String disabled = json.getString("disabled");
+		Boolean disabled = json.getBoolean("disabled");
 
 		List<TstVer> ls = verService.list(projectId, keywords, disabled);
 

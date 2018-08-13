@@ -1,12 +1,14 @@
 package com.ngtesting.platform.service.impl;
 
 import com.ngtesting.platform.dao.CustomFieldDao;
+import com.ngtesting.platform.dao.CustomFieldOptionDao;
 import com.ngtesting.platform.model.TstCustomField;
 import com.ngtesting.platform.service.CustomFieldOptionService;
 import com.ngtesting.platform.service.CustomFieldService;
 import com.ngtesting.platform.service.ProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -15,6 +17,8 @@ import java.util.List;
 public class CustomFieldServiceImpl extends BaseServiceImpl implements CustomFieldService {
     @Autowired
     CustomFieldDao customFieldDao;
+    @Autowired
+    CustomFieldOptionDao customFieldOptionDao;
 
     @Autowired
     ProjectService projectService;
@@ -29,65 +33,20 @@ public class CustomFieldServiceImpl extends BaseServiceImpl implements CustomFie
     }
 
     @Override
-    public List<TstCustomField> listForCaseByOrg(Integer orgId) {
-//        DetachedCriteria dc = DetachedCriteria.forClass(TstCustomField.class);
-//
-//        dc.add(Restrictions.eq("orgId", orgId));
-//        dc.add(Restrictions.eq("applyTo", FieldApplyTo.test_case));
-//
-//        dc.add(Restrictions.eq("disabled", Boolean.FALSE));
-//        dc.add(Restrictions.eq("deleted", Boolean.FALSE));
-//
-//        dc.addOrder(Order.asc("ordr"));
-//        List ls = findAllByCriteria(dc);
-//
-//        return ls;
-
-        return null;
-    }
-
-    @Override
     public List<TstCustomField> listForCaseByProject(Integer orgId, Integer projectId) {
-//        DetachedCriteria dc = DetachedCriteria.forClass(TstCustomField.class);
-//
-//        dc.createAlias("projectSet", "p").add(Restrictions.eq("p.id", projectId));
-//        dc.add(Restrictions.eq("applyTo", FieldApplyTo.test_case));
-//        dc.add(Restrictions.eq("disabled", Boolean.FALSE));
-//        dc.add(Restrictions.eq("deleted", Boolean.FALSE));
-//        dc.addOrder(Order.asc("ordr"));
-//        List<TstCustomField> ls1 = findAllByCriteria(dc);
-//
-//        DetachedCriteria dc2 = DetachedCriteria.forClass(TstCustomField.class);
-//        dc2.add(Restrictions.eq("orgId", orgId));
-//        dc2.add(Restrictions.eq("global", true));
-//        dc2.add(Restrictions.eq("applyTo", FieldApplyTo.test_case));
-//        dc2.add(Restrictions.eq("disabled", Boolean.FALSE));
-//        dc2.add(Restrictions.eq("deleted", Boolean.FALSE));
-//        dc2.addOrder(Order.asc("ordr"));
-//        List<TstCustomField> ls2 = findAllByCriteria(dc2);
-//
-//        ls2.addAll(ls1);
-//        List<TstCustomField> vos = genVos(ls2);
-//
-//        return vos;
+        List<TstCustomField> ls = customFieldDao.listForCaseByProject(
+                orgId, projectId, TstCustomField.FieldApplyTo.test_case.toString());
 
-        return null;
+        return ls;
     }
 
     @Override
     public TstCustomField get(Integer customFieldId) {
-        return customFieldDao.get(customFieldId);
+        return customFieldDao.getDetail(customFieldId);
     }
 
     @Override
-    public List<TstCustomField> listVos(Integer orgId) {
-        List<TstCustomField> ls = list(orgId);
-
-        List<TstCustomField> vos = genVos(ls);
-        return vos;
-    }
-
-    @Override
+    @Transactional
     public TstCustomField save(TstCustomField vo, Integer orgId) {
         vo.setOrgId(orgId);
 
@@ -99,6 +58,9 @@ public class CustomFieldServiceImpl extends BaseServiceImpl implements CustomFie
             vo.setOrdr(maxOrder + 10);
 
             customFieldDao.save(vo);
+            if (vo.getType().equals(TstCustomField.FieldType.dropdown)) {
+                customFieldOptionDao.saveAll(vo.getId(), vo.getOptions());
+            }
         } else {
             customFieldDao.update(vo);
         }
@@ -175,23 +137,6 @@ public class CustomFieldServiceImpl extends BaseServiceImpl implements CustomFie
             ls.add(item.toString());
         }
         return ls;
-    }
-
-    @Override
-    public List<TstCustomField> genVos(List<TstCustomField> pos) {
-        List<TstCustomField> vos = new LinkedList();
-
-        for (TstCustomField po : pos) {
-            TstCustomField vo = genVo(po);
-            vos.add(vo);
-        }
-        return vos;
-    }
-    @Override
-    public TstCustomField genVo(TstCustomField po) {
-        po.setOptions(this.customFieldOptionService.genVos(po.getOptions()));
-
-        return po;
     }
 
 }

@@ -2,6 +2,7 @@ package com.ngtesting.platform.action;
 
 import com.alibaba.fastjson.JSONObject;
 import com.ngtesting.platform.config.Constant;
+import com.ngtesting.platform.dao.ProjectDao;
 import com.ngtesting.platform.model.*;
 import com.ngtesting.platform.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +24,9 @@ public class CaseAction extends BaseAction {
 	@Autowired
     ProjectService projectService;
 	@Autowired
+	ProjectDao projectDao;
+
+	@Autowired
     CaseService caseService;
     @Autowired
     CaseTypeService caseTypeService;
@@ -41,15 +45,12 @@ public class CaseAction extends BaseAction {
 		Integer projectId = json.getInteger("projectId");
 
 		List<TstCase> ls = caseService.query(projectId);
-        List<TstCase> vos = caseService.genVos(ls, false);
 
         List<TstCaseType> caseTypePos = caseTypeService.list(orgId);
-
         List<TstCasePriority> casePriorityPos = casePriorityService.list(orgId);
-
         List<TstCustomField> customFieldList = customFieldService.listForCaseByProject(orgId, projectId);
 
-        ret.put("data", vos);
+        ret.put("data", ls);
         ret.put("caseTypeList", caseTypePos);
         ret.put("casePriorityList", casePriorityPos);
 		ret.put("customFields", customFieldList);
@@ -67,7 +68,7 @@ public class CaseAction extends BaseAction {
 		Integer suiteId = json.getInteger("suiteId");
 
         List<TstCase> vos = caseService.queryForSuiteSelection(projectId, caseProjectId, suiteId);
-		List<TstProject> projects = projectService.listBrothers(projectId);
+		List<TstProject> projects = projectDao.listBrothers(projectId);
 
 		ret.put("data", vos);
 		ret.put("brotherProjects", projects);
@@ -75,17 +76,17 @@ public class CaseAction extends BaseAction {
 		return ret;
 	}
 
-	@RequestMapping(value = "queryForRunSelection", method = RequestMethod.POST)
+	@RequestMapping(value = "queryForTaskSelection", method = RequestMethod.POST)
 	@ResponseBody
-	public Map<String, Object> queryForRunSelection(HttpServletRequest request, @RequestBody JSONObject json) {
+	public Map<String, Object> queryForTaskSelection(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
 
 		Integer projectId = json.getInteger("projectId");
         Integer caseProjectId = json.getInteger("caseProjectId");
-		Integer runId = json.getInteger("runId");
+		Integer taskId = json.getInteger("taskId");
 
-		List<TstCase> vos = caseService.queryForRunSelection(projectId, caseProjectId, runId);
-		List<TstProject> projects = projectService.listBrothers(projectId);
+		List<TstCase> vos = caseService.queryForTaskSelection(projectId, caseProjectId, taskId);
+		List<TstProject> projects = projectDao.listBrothers(projectId);
 
 		ret.put("data", vos);
 		ret.put("brotherProjects", projects);
@@ -117,9 +118,8 @@ public class CaseAction extends BaseAction {
 		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
 
         TstCase testCasePo = caseService.renamePers(json, userVo);
-        TstCase caseVo = caseService.genVo(testCasePo);
 
-        ret.put("data", caseVo);
+        ret.put("data", testCasePo);
         ret.put("code", Constant.RespCode.SUCCESS.getCode());
         return ret;
     }
@@ -146,7 +146,7 @@ public class CaseAction extends BaseAction {
 
 		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
 
-		TstCase testCase = caseService.delete(id, userVo);
+		caseService.delete(id, userVo);
 
 		ret.put("code", Constant.RespCode.SUCCESS.getCode());
 		return ret;
@@ -169,17 +169,16 @@ public class CaseAction extends BaseAction {
 		return ret;
 	}
 
-    @RequestMapping(value = "save", method = RequestMethod.POST)
+    @RequestMapping(value = "update", method = RequestMethod.POST)
     @ResponseBody
-    public Map<String, Object> save(HttpServletRequest request, @RequestBody JSONObject json) {
+    public Map<String, Object> update(HttpServletRequest request, @RequestBody JSONObject json) {
         Map<String, Object> ret = new HashMap<String, Object>();
 
 		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
 
-        TstCase po = caseService.save(json, userVo);
-        TstCase caseVo = caseService.genVo(po, true);
+        TstCase po = caseService.update(json, userVo);
 
-        ret.put("data", caseVo);
+        ret.put("data", po);
         ret.put("code", Constant.RespCode.SUCCESS.getCode());
         return ret;
     }
@@ -192,9 +191,8 @@ public class CaseAction extends BaseAction {
 		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
 
 		TstCase po = caseService.saveField(json, userVo);
-        TstCase caseVo = caseService.genVo(po);
 
-		ret.put("data", caseVo);
+		ret.put("data", po);
 		ret.put("code", Constant.RespCode.SUCCESS.getCode());
 		return ret;
 	}
@@ -207,24 +205,23 @@ public class CaseAction extends BaseAction {
 		Integer id = json.getInteger("id");
         String contentType = json.getString("contentType");
 
-		TstCase po = caseService.changeContentTypePers(id, contentType);
+		caseService.changeContentTypePers(id, contentType);
 
 		ret.put("code", Constant.RespCode.SUCCESS.getCode());
 		return ret;
 	}
 
-	@RequestMapping(value = "reviewPass", method = RequestMethod.POST)
+	@RequestMapping(value = "reviewResult", method = RequestMethod.POST)
 	@ResponseBody
-	public Map<String, Object> reviewPass(HttpServletRequest request, @RequestBody JSONObject json) {
+	public Map<String, Object> reviewResult(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
 
 		Integer id = json.getInteger("id");
-		Boolean pass = json.getBoolean("pass");
+		Boolean result = json.getBoolean("result");
 
-		TstCase po = caseService.reviewPassPers(id, pass);
-        TstCase caseVo = caseService.genVo(po);
+		TstCase po = caseService.reviewResult(id, result);
 
-        ret.put("reviewResult", caseVo);
+        ret.put("reviewResult", po);
 		ret.put("code", Constant.RespCode.SUCCESS.getCode());
 		return ret;
 	}

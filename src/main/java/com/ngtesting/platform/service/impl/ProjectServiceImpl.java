@@ -69,7 +69,6 @@ public class ProjectServiceImpl extends BaseServiceImpl implements ProjectServic
 	public List<TstProjectAccessHistory> listRecentProject(Integer orgId, Integer userId) {
         PageHelper.startPage(0, 5);
 		List<TstProjectAccessHistory> pos = projectDao.listRecent(orgId, userId);
-//        PageInfo result = new PageInfo(pos);
 
 		return pos;
 	}
@@ -138,58 +137,14 @@ public class ProjectServiceImpl extends BaseServiceImpl implements ProjectServic
 	}
 
 	@Override
-	public Boolean delete(Integer id) {
-//		if (id == null) {
-//			return null;
-//		}
-//
-//		TstProject po = (TstProject) get(TstProject.class, id);
-//		po.setDeleted(true);
-//		saveOrUpdate(po);
-//
-//		// 项目组被删除，删除子项目
-//		if (po.getType().equals(ProjectType.group)) {
-//			for (TstProject child : po.getChildren()) {
-//				child.setDeleted(true);
-//				saveOrUpdate(child);
-//			}
-//
-//		}
+	public Boolean delete(Integer id, Integer userId) {
+        projectDao.delete(id, userId);
 
 		return true;
 	}
 
 	@Override
-	public List<TstProject> listBrothers(Integer projectId) {
-//	    TstProject project = (TstProject)get(TstProject.class, projectId);
-//        DetachedCriteria dc = DetachedCriteria.forClass(TstProject.class);
-//
-//        dc.add(Restrictions.eq("parentId", project.getParentId()));
-//        dc.add(Restrictions.eq("type", ProjectType.project));
-//        dc.add(Restrictions.eq("disabled", Boolean.FALSE));
-//        dc.add(Restrictions.eq("deleted", Boolean.FALSE));
-//        dc.addOrder(Order.asc("id"));
-//
-//        List<TstProject> pos = findAllByCriteria(dc);
-//
-//        List<TstProject> vos = this.genVos(pos, null);
-//        return vos;
-
-		return null;
-	}
-    @Override
-    public List<Integer> listBrotherIds(Integer projectId) {
-//        String hql = "select prj.id from TstProject prj where prj.parentId=" +
-//                "(select p.parentId from TstProject p where p.id=?)"
-//                + " and type=? and prj.deleted != true and prj.deleted != true";
-//
-//        List<Integer> ids = getListByHQL(hql, projectId, ProjectType.project);
-//        return ids;
-
-		return null;
-    }
-
-	@Override
+    @Transactional
 	public TstProject viewPers(Integer projectId, TstUser tstUser) {
 		TstProject po = get(projectId);
 
@@ -204,7 +159,7 @@ public class ProjectServiceImpl extends BaseServiceImpl implements ProjectServic
 
     @Override
     public void updateNameInHisotyPers(Integer projectId, Integer userId) {
-//        TstProject project = get(projectId);
+//        TstProject project = getDetail(projectId);
 //        genHistoryPers(project.getOrgId(), userId, projectId, project.getName());
     }
 
@@ -221,7 +176,7 @@ public class ProjectServiceImpl extends BaseServiceImpl implements ProjectServic
 //		TstProjectAccessHistory history;
 //		List<TstProjectAccessHistory> pos = findAllByCriteria(dc);
 //		if (pos.size() > 0) {
-//			history = pos.get(0);
+//			history = pos.getDetail(0);
 //			history.setProjectName(projectName);
 //		} else {
 //			history = new TstProjectAccessHistory(orgId, userId, projectId, projectName);

@@ -1,8 +1,17 @@
 package com.ngtesting.platform.model;
 
 public class TstHistory extends BaseModel {
+    private static final Long serialVersionUID = -6418363700406245211L;
 
-    private static final long serialVersionUID = -6418363700406245211L;
+    private String title;
+    private String descr;
+    private String uri;
+
+    private Integer projectId;
+    private Integer entityId;
+    private TargetType entityType;
+
+    private Integer userId;
 
     public enum TargetType {
         project("project", "项目"),
@@ -10,7 +19,7 @@ public class TstHistory extends BaseModel {
 
         plan("plan", "计划"),
         suite("suite", "测试集"),
-        run("run", "测试任务");
+        task("task", "测试任务");
 
         TargetType(String code, String name) {
             this.code = code;
@@ -23,15 +32,6 @@ public class TstHistory extends BaseModel {
             return code;
         }
     }
-
-    private String title;
-    private String descr;
-    private String uri;
-
-    private Long entityId;
-    private String type;
-
-    private Long userId;
 
     public String getTitle() {
         return title;
@@ -57,27 +57,35 @@ public class TstHistory extends BaseModel {
         this.uri = uri;
     }
 
-    public Long getUserId() {
+    public Integer getUserId() {
         return userId;
     }
 
-    public void setUserId(Long userId) {
+    public void setUserId(Integer userId) {
         this.userId = userId;
     }
 
-    public Long getEntityId() {
+    public Integer getEntityId() {
         return entityId;
     }
 
-    public void setEntityId(Long entityId) {
+    public void setEntityId(Integer entityId) {
         this.entityId = entityId;
     }
 
-    public String getType() {
-        return type;
+    public Integer getProjectId() {
+        return projectId;
     }
 
-    public void setType(String type) {
-        this.type = type;
+    public void setProjectId(Integer projectId) {
+        this.projectId = projectId;
+    }
+
+    public TargetType getEntityType() {
+        return entityType;
+    }
+
+    public void setEntityType(TargetType entityType) {
+        this.entityType = entityType;
     }
 }

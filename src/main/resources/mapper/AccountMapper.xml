@@ -10,19 +10,37 @@
           #{leftSizeCase},#{leftSizeIssue},#{defaultOrgId},#{defaultPrjId},
           #{deleted},#{disabled},#{createTime})
     </insert>
+    <update id="loginWithVerifyCode" parameterType="TstUser">
+        UPDATE TstUser
+        SET token=#{token},lastLoginTime=NOW(),updateTime=NOW()
+        WHERE id=#{id}
+    </update>
     <update id="login">
         UPDATE TstUser
           SET token=#{token}, lastLoginTime=#{lastLoginTime}
           WHERE id=#{id}
+    </update>
+    <update id="logout">
+        UPDATE TstUser
+        SET token='', updateTime=NOW()
+        WHERE email=#{email}
     </update>
 
     <select id="initUser" parameterType="INTEGER" useCache="false" statementType="CALLABLE">
         { call init_user(#{userId,mode=IN,jdbcType=INTEGER}) }
     </select>
 
-    <insert id="genVerifyCode" parameterType="Map" useGeneratedKeys="true" keyProperty="id">
-        insert into TstVerifyCode (refId,code,expireTime,createTime,deleted,disabled)
-        values (#{userId},#{code},#{expireTime},#{createTime},false,false)
-    </insert>
+    <update id="changePassword" parameterType="TstCaseType">
+        UPDATE TstUser
+        SET password=#{password},updateTime=NOW()
+
+        WHERE id=#{userId} AND password=#{oldPassword}
+    </update>
+
+    <update id="resetPassword" parameterType="TstUser">
+        UPDATE TstUser
+        SET password=#{password},token=#{token},lastLoginTime=NOW(),updateTime=NOW()
+        WHERE id=#{id}
+    </update>
 
 </mapper>

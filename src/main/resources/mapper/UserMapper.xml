@@ -15,18 +15,21 @@
             OR usr.phone LIKE CONCAT('%','${keywords}','%' )
             )
         </if>
-        <if test="disabled != null and disabled != ''">
+        <if test="disabled != null">
             AND usr.disabled = #{disabled}
         </if>
 
         AND r.orgId = #{orgId}
         AND usr.deleted != TRUE
-        AND usr.disabled != TRUE
         ORDER BY usr.id ASC
     </select>
 
-    <select id="queryByUser" resultType="TstOrg">
+    <select id="queryByUser" resultType="TstUser">
         SELECT * FROM tstUser
+    </select>
+
+    <select id="getProjectUsers" resultType="TstUser">
+        { call get_project_users(#{prjId,mode=IN,jdbcType=INTEGER}) }
     </select>
 
     <select id="get" parameterType="int" resultType="TstUser">
@@ -76,6 +79,12 @@
     <update id="setDefaultPrj">
         UPDATE TstUser
         SET defaultPrjId=#{prjId}, defaultPrjName=#{prjName}
+        WHERE id=#{id}
+    </update>
+
+    <update id="setLeftSize" parameterType="TstUser">
+        UPDATE TstUser
+        SET leftSizeCase=#{leftSizeCase}, leftSizeIssue=#{leftSizeIssue}
         WHERE id=#{id}
     </update>
 

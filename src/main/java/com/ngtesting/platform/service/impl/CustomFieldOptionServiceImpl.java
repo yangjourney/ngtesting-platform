@@ -1,90 +1,65 @@
 package com.ngtesting.platform.service.impl;
 
+import com.ngtesting.platform.dao.CustomFieldOptionDao;
 import com.ngtesting.platform.model.TstCustomFieldOption;
 import com.ngtesting.platform.service.CustomFieldOptionService;
-import com.ngtesting.platform.utils.BeanUtilEx;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
 public class CustomFieldOptionServiceImpl extends BaseServiceImpl implements CustomFieldOptionService {
+    @Autowired
+    CustomFieldOptionDao customFieldOptionDao;
 
     @Override
     public List<TstCustomFieldOption> listVos(Integer fieldId) {
-//        DetachedCriteria dc = DetachedCriteria.forClass(TestCustomFieldOption.class);
-//
-//        dc.add(Restrictions.eq("fieldId", fieldId));
-//        dc.add(Restrictions.eq("disabled", Boolean.FALSE));
-//        dc.add(Restrictions.eq("deleted", Boolean.FALSE));
-//
-//        dc.addOrder(Order.asc("ordr"));
-//        List ls = findAllByCriteria(dc);
-//
-//        List<TstCustomFieldOption> vos = genVos(ls);
-//        return vos;
-
-        return null;
+        List<TstCustomFieldOption> ls = customFieldOptionDao.listByFieldId(fieldId);
+        return ls;
     }
 
     @Override
     public TstCustomFieldOption save(TstCustomFieldOption vo) {
-//        if (vo == null) {
-//            return null;
-//        }
-//
-//        TestCustomFieldOption po;
-//        if (vo.getId() != null) {
-//            po = (TestCustomFieldOption) get(TestCustomFieldOption.class, vo.getId());
-//        } else {
-//            po = new TestCustomFieldOption();
-//        }
-//        BeanUtilEx.copyProperties(po, vo);
-//
-//        if (vo.getId() == null) {
-//            String hql = "select max(ordr) from TestCustomFieldOption opt where opt.fieldId = ?";
-//            Object obj = getByHQL(hql, vo.getFieldId());
-//            Integer maxOrder = obj!=null?(Integer) getByHQL(hql, vo.getFieldId()): 10;
-//            po.setOrdr(maxOrder + 10);
-//        }
-//
-//        saveOrUpdate(po);
-//        return po;
+        if (vo.getId() == null) {
+            Integer maxOrder = customFieldOptionDao.getMaxOrder(vo.getFieldId());
+            if (maxOrder == null) {
+                maxOrder = 0;
+            }
+            vo.setOrdr(maxOrder + 10);
 
-        return null;
+            customFieldOptionDao.save(vo);
+        } else {
+            customFieldOptionDao.update(vo);
+        }
+
+        return vo;
     }
 
     @Override
     public boolean delete(Integer id) {
-//        getDao().delete(id);
+        customFieldOptionDao.delete(id);
         return true;
     }
 
     @Override
     public boolean changeOrderPers(Integer id, String act, Integer fieldId) {
-//TstCustomFieldOption
+        TstCustomFieldOption curr = customFieldOptionDao.get(id);
+        TstCustomFieldOption neighbor = null;
+        if ("up".equals(act)) {
+            neighbor = customFieldOptionDao.getPrev(curr.getOrdr(), fieldId);
+        } else if ("down".equals(act)) {
+            neighbor = customFieldOptionDao.getNext(curr.getOrdr(), fieldId);
+        }
+        if (neighbor == null) {
+            return false;
+        }
+
+        Integer currOrder = curr.getOrdr();
+        Integer neighborOrder = neighbor.getOrdr();
+        customFieldOptionDao.setOrder(id, neighborOrder);
+        customFieldOptionDao.setOrder(neighbor.getId(), currOrder);
 
         return true;
-    }
-
-    @Override
-    public List<TstCustomFieldOption> genVos(List<TstCustomFieldOption> pos) {
-//        List<TstCustomFieldOption> vos = new LinkedList<>();
-//
-//        for (TestCustomFieldOption po : pos) {
-//            TstCustomFieldOption vo = genVo(po);
-//            vos.add(vo);
-//        }
-//        return vos;
-
-        return null;
-    }
-
-    @Override
-    public TstCustomFieldOption genVo(TstCustomFieldOption po) {
-        TstCustomFieldOption vo = new TstCustomFieldOption();
-        BeanUtilEx.copyProperties(vo, po);
-
-        return vo;
     }
 }

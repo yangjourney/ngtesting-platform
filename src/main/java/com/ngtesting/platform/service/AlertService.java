@@ -11,9 +11,9 @@ public interface AlertService extends BaseService {
 
     List<TstAlert> scanAlerts(Integer userId);
 
-    void saveAlert(TstTask run);
+    void create(TstTask task);
 
-    TstAlert getByRun(Integer id);
+    TstAlert getByTask(Integer id);
 
     void markAllReadPers(String ids);
 

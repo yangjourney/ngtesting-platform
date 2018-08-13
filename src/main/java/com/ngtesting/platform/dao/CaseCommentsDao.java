@@ -1,10 +1,13 @@
 package com.ngtesting.platform.dao;
 
-import com.ngtesting.platform.model.TstMsg;
+import com.ngtesting.platform.model.TstCaseComments;
 import org.apache.ibatis.annotations.Param;
 
-import java.util.List;
-
 public interface CaseCommentsDao {
-    List<TstMsg> query(@Param("userId") Integer userId);
+
+    void update(TstCaseComments vo);
+
+    void save(TstCaseComments vo);
+
+    boolean delete(@Param("id") Integer id, @Param("userId") Integer userId);
 }
