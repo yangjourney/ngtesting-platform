@@ -6,7 +6,6 @@ import com.ngtesting.platform.config.Constant;
 import com.ngtesting.platform.config.WsConstant;
 import com.ngtesting.platform.model.TstTask;
 import com.ngtesting.platform.model.TstUser;
-import com.ngtesting.platform.service.CustomFieldService;
 import com.ngtesting.platform.service.TestTaskService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -29,70 +28,56 @@ public class TaskAction extends BaseAction {
 	@Autowired
 	TestTaskService taskService;
 
-    @Autowired
-    CustomFieldService customFieldService;
-
-//	@RequestMapping(value = "loadCase", method = RequestMethod.POST)
-//	@ResponseBody
-//	public Map<String, Object> loadCase(HttpServletRequest request, @RequestBody JSONObject json) {
-//		Map<String, Object> ret = new HashMap<String, Object>();
-//
-//		Integer orgId = json.getInteger("orgId");
-//        Integer projectId = json.getInteger("projectId");
-//		Integer runId = json.getInteger("runId");
-//
-//		List<TstCaseInTask> ls = taskService.lodaCase(runId);
-//		List<TstCaseInTaskVo> vos = taskService.genCaseVos(ls);
-//
-//        List<TstCustomField> customFieldList = customFieldService.listForCaseByProject(orgId, projectId);
-//
-//		ret.put("data", vos);
-//        ret.put("customFields", customFieldList);
-//		ret.put("code", Constant.RespCode.SUCCESS.getCode());
-//		return ret;
-//	}
-
     @RequestMapping(value = "get", method = RequestMethod.POST)
     @ResponseBody
     public Map<String, Object> get(HttpServletRequest request, @RequestBody JSONObject json) {
         Map<String, Object> ret = new HashMap<String, Object>();
+		TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
+		Integer projectId = user.getDefaultPrjId();
 
-        TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
         Integer runId = json.getInteger("id");
 
-        TstTask vo = taskService.getById(runId);
+        TstTask vo = taskService.getById(runId, projectId);
 
         ret.put("data", vo);
         ret.put("code", Constant.RespCode.SUCCESS.getCode());
         return ret;
     }
 
-	@RequestMapping(value = "delete", method = RequestMethod.POST)
-	@ResponseBody
-	public Map<String, Object> delete(HttpServletRequest request, @RequestBody JSONObject json) {
-		Map<String, Object> ret = new HashMap<String, Object>();
+    @RequestMapping(value = "delete", method = RequestMethod.POST)
+    @ResponseBody
+    public Map<String, Object> delete(HttpServletRequest request, @RequestBody JSONObject json) {
+        Map<String, Object> ret = new HashMap<String, Object>();
+        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
+        Integer projectId = user.getDefaultPrjId();
 
-		Integer id = json.getInteger("id");
+        Integer id = json.getInteger("id");
 
-		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
+        Boolean result = taskService.delete(id, projectId);
+        if (!result) {
+            return authFail();
+        }
 
-		taskService.delete(id, userVo.getId());
-
-		ret.put("code", Constant.RespCode.SUCCESS.getCode());
-		return ret;
-	}
+        ret.put("code", Constant.RespCode.SUCCESS.getCode());
+        return ret;
+    }
 
 	@RequestMapping(value = "close", method = RequestMethod.POST)
 	@ResponseBody
 	public Map<String, Object> close(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
+        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
+        Integer projectId = user.getDefaultPrjId();
 
 		Integer id = json.getInteger("id");
-		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
 
-		taskService.closePers(id, userVo.getId());
-		taskService.closePlanIfAllTaskClosedPers(id);
-		TstTask vo = taskService.getById(id);
+		Boolean result = taskService.close(id, projectId);
+		if (!result) {
+		    return authFail();
+        }
+
+		taskService.closePlanIfAllTaskClosed(id);
+		TstTask vo = taskService.getById(id, projectId);
 
         ret.put("data", vo);
 		ret.put("code", Constant.RespCode.SUCCESS.getCode());
@@ -103,13 +88,17 @@ public class TaskAction extends BaseAction {
 	@ResponseBody
 	public Map<String, Object> save(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
+        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
+        Integer projectId = user.getDefaultPrjId();
 
-		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
+		TstTask po = taskService.save(json, user);
+        if (po == null) {
+            return authFail();
+        }
 
-		TstTask po = taskService.save(json, userVo);
-		TstTask vo = taskService.getById(po.getId());
+		TstTask vo = taskService.getById(po.getId(), projectId);
 
-        optFacade.opt(WsConstant.WS_TODO, userVo);
+        optFacade.opt(WsConstant.WS_TODO, user);
 
 		ret.put("data", vo);
 		ret.put("code", Constant.RespCode.SUCCESS.getCode());
@@ -120,11 +109,11 @@ public class TaskAction extends BaseAction {
 	@ResponseBody
 	public Map<String, Object> saveCases(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
+        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
+        Integer projectId = user.getDefaultPrjId();
 
-        TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
-
-		TstTask po = taskService.saveCases(json, userVo);
-		TstTask caseVo = taskService.getById(po.getId());
+		TstTask po = taskService.saveCases(json, user);
+		TstTask caseVo = taskService.getById(po.getId(), projectId);
 
 		ret.put("data", caseVo);
 		ret.put("code", Constant.RespCode.SUCCESS.getCode());

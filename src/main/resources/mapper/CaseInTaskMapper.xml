@@ -10,6 +10,10 @@
         JOIN TstCase cs ON o.caseId = cs.id
 
         WHERE o.taskId=#{taskId}
+        <if test="projectId != null">
+            AND o.projectId=#{projectId}
+        </if>
+
         AND o.deleted != true AND o.disabled != true
         ORDER BY o.pId, o.ordr
     </select>
@@ -22,36 +26,39 @@
         JOIN TstCase cs ON o.caseId = cs.id
 
         WHERE o.id=#{id}
+        <if test="projectId != null">
+            AND o.projectId=#{projectId}
+        </if>
     </select>
 
-    <update id="setResult" parameterType="TstCaseInTask">
-        update TstCaseInTask o
-        set o.result=#{result},
-          o.status=#{status},
-          o.exeBy=#{exeBy},
-          o.exeTime=#{exeTime}
-
-        where o.id = #{id}
-    </update>
-
     <select id="getDetail" resultMap="caseInTaskMap">
-        SELECT cs.id id, cs.*,
+        SELECT cs.id id, cs.*, o.id entityId,
           o.id entityId, o.pId pId, o.isLeaf isLeaf, o.status status, o.result result, o.ordr ordr
 
         FROM TstCaseInTask o
         JOIN TstCase cs ON o.caseId = cs.id
 
         WHERE o.id=#{id}
+        <if test="projectId != null">
+            AND o.projectId=#{projectId}
+        </if>
     </select>
+
+    <update id="setResult">
+        update TstCaseInTask o
+        set o.result=#{result},
+        o.status=#{status},
+        o.exeBy=#{exeBy},
+        o.exeTime=NOW()
+
+        where o.id = #{id}
+    </update>
 
     <resultMap id="caseInTaskMap" type="TstCaseInTask" autoMapping="true">
         <id column="id" property="id"/>
+        <id column="caseInTaskId" property="caseInTaskId"/>
 
         <collection property="steps" select="com.ngtesting.platform.dao.CaseStepDao.listByCaseId"
-                    column="{id=id}">
-        </collection>
-
-        <collection property="histories" select="com.ngtesting.platform.dao.CaseHistoryDao.listByCaseId"
                     column="{id=id}">
         </collection>
 
@@ -61,6 +68,10 @@
 
         <collection property="attachments" select="com.ngtesting.platform.dao.CaseAttachmentDao.listByCaseId"
                     column="{id=id}">
+        </collection>
+
+        <collection property="histories" select="com.ngtesting.platform.dao.CaseInTaskHistoryDao.listByCaseInTaskId"
+                    column="{caseInTaskId=entityId}">
         </collection>
     </resultMap>
 

@@ -22,13 +22,12 @@ public class CaseTypeServiceImpl extends BaseServiceImpl implements CaseTypeServ
 	}
 
     @Override
-    public TstCaseType get(Integer id) {
-        return caseTypeDao.get(id);
+    public TstCaseType get(Integer id, Integer orgId) {
+        return caseTypeDao.get(id, orgId);
     }
 
     @Override
 	public TstCaseType save(TstCaseType vo, Integer orgId) {
-        vo.setOrgId(orgId);
 
         if (vo.getId() == null) {
             Integer maxOrder = caseTypeDao.getMaxOrdrNumb(orgId);
@@ -37,34 +36,48 @@ public class CaseTypeServiceImpl extends BaseServiceImpl implements CaseTypeServ
             }
             vo.setOrdr(maxOrder + 10);
 
+            vo.setOrgId(orgId);
             caseTypeDao.save(vo);
         } else {
-            caseTypeDao.update(vo);
+            Integer count = caseTypeDao.update(vo);
+            if (count == 0) {
+                return null;
+            }
         }
 
         return vo;
 	}
 
 	@Override
-	public boolean delete(Integer id) {
-        caseTypeDao.delete(id);
+	public Boolean delete(Integer id, Integer orgId) {
+        Integer count = caseTypeDao.delete(id, orgId);
+        if (count == 0) {
+            return false;
+        }
 
-		return true;
+        return true;
 	}
 
 	@Override
     @Transactional
-	public boolean setDefaultPers(Integer id, Integer orgId) {
+	public Boolean setDefault(Integer id, Integer orgId) {
         caseTypeDao.removeDefault(orgId);
-        caseTypeDao.setDefault(id, orgId);
 
+        Integer count = caseTypeDao.setDefault(id, orgId);
+        if (count == 0) {
+            return false;
+        }
 		return true;
 	}
 
 	@Override
     @Transactional
-	public boolean changeOrderPers(Integer id, String act, Integer orgId) {
-        TstCaseType curr = caseTypeDao.get(id);
+	public Boolean changeOrder(Integer id, String act, Integer orgId) {
+        TstCaseType curr = caseTypeDao.get(id, orgId);
+        if (curr == null) {
+            return false;
+        }
+
         TstCaseType neighbor = null;
         if ("up".equals(act)) {
             neighbor = caseTypeDao.getPrev(curr.getOrdr(), orgId);
@@ -77,8 +90,8 @@ public class CaseTypeServiceImpl extends BaseServiceImpl implements CaseTypeServ
 
         Integer currOrder = curr.getOrdr();
         Integer neighborOrder = neighbor.getOrdr();
-        caseTypeDao.setOrder(id, neighborOrder);
-        caseTypeDao.setOrder(neighbor.getId(), currOrder);
+        caseTypeDao.setOrder(id, neighborOrder, orgId);
+        caseTypeDao.setOrder(neighbor.getId(), currOrder, orgId);
 
         return true;
 	}

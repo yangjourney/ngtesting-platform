@@ -41,8 +41,8 @@ public class CustomFieldServiceImpl extends BaseServiceImpl implements CustomFie
     }
 
     @Override
-    public TstCustomField get(Integer customFieldId) {
-        return customFieldDao.getDetail(customFieldId);
+    public TstCustomField get(Integer id, Integer orgId) {
+        return customFieldDao.getDetail(id, orgId);
     }
 
     @Override
@@ -62,22 +62,32 @@ public class CustomFieldServiceImpl extends BaseServiceImpl implements CustomFie
                 customFieldOptionDao.saveAll(vo.getId(), vo.getOptions());
             }
         } else {
-            customFieldDao.update(vo);
+            Integer count = customFieldDao.update(vo);
+            if (count == 0) {
+                return null;
+            }
         }
 
         return vo;
     }
 
     @Override
-    public boolean delete(Integer id) {
-        customFieldDao.delete(id);
+    public Boolean delete(Integer id, Integer orgId) {
+        Integer count = customFieldDao.delete(id, orgId);
+        if (count == 0) {
+            return false;
+        }
 
         return true;
     }
 
     @Override
-    public boolean changeOrderPers(Integer id, String act, Integer orgId) {
-        TstCustomField curr = customFieldDao.get(id);
+    public Boolean changeOrderPers(Integer id, String act, Integer orgId) {
+        TstCustomField curr = customFieldDao.get(id, orgId);
+        if (curr == null) {
+            return false;
+        }
+
         TstCustomField neighbor = null;
         if ("up".equals(act)) {
             neighbor = customFieldDao.getPrev(curr.getOrdr(), orgId);
@@ -90,8 +100,8 @@ public class CustomFieldServiceImpl extends BaseServiceImpl implements CustomFie
 
         Integer currOrder = curr.getOrdr();
         Integer neighborOrder = neighbor.getOrdr();
-        customFieldDao.setOrder(id, neighborOrder);
-        customFieldDao.setOrder(neighbor.getId(), currOrder);
+        customFieldDao.setOrder(id, neighborOrder, orgId);
+        customFieldDao.setOrder(neighbor.getId(), currOrder, orgId);
 
         return true;
     }

@@ -5,6 +5,7 @@ import com.ngtesting.platform.model.TstCasePriority;
 import com.ngtesting.platform.service.CasePriorityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -21,11 +22,12 @@ public class CasePriorityServiceImpl extends BaseServiceImpl implements CasePrio
 	}
 
     @Override
-    public TstCasePriority get(Integer id) {
-        return casePriorityDao.get(id);
+    public TstCasePriority get(Integer id, Integer orgId) {
+        return casePriorityDao.get(id, orgId);
     }
 
     @Override
+    @Transactional
 	public TstCasePriority save(TstCasePriority vo, Integer orgId) {
         vo.setOrgId(orgId);
 
@@ -38,30 +40,46 @@ public class CasePriorityServiceImpl extends BaseServiceImpl implements CasePrio
 
             casePriorityDao.save(vo);
         } else {
-            casePriorityDao.update(vo);
+            Integer count = casePriorityDao.update(vo);
+            if (count == 0) {
+                return null;
+            }
         }
 
         return vo;
 	}
 
 	@Override
-	public boolean delete(Integer id) {
-        casePriorityDao.delete(id);
+    @Transactional
+	public Boolean delete(Integer id, Integer orgId) {
+        Integer count = casePriorityDao.delete(id, orgId);
+        if (count == 0) {
+            return false;
+        }
 
         return true;
 	}
 
 	@Override
-	public boolean setDefaultPers(Integer id, Integer orgId) {
+    @Transactional
+	public Boolean setDefault(Integer id, Integer orgId) {
         casePriorityDao.removeDefault(orgId);
-        casePriorityDao.setDefault(id, orgId);
 
+        Integer count = casePriorityDao.setDefault(id, orgId);
+        if (count == 0) {
+            return false;
+        }
         return true;
 	}
 
 	@Override
-	public boolean changeOrderPers(Integer id, String act, Integer orgId) {
-        TstCasePriority curr = casePriorityDao.get(id);
+    @Transactional
+	public Boolean changeOrder(Integer id, String act, Integer orgId) {
+        TstCasePriority curr = casePriorityDao.get(id, orgId);
+        if (curr == null) {
+            return false;
+        }
+
         TstCasePriority neighbor = null;
         if ("up".equals(act)) {
             neighbor = casePriorityDao.getPrev(curr.getOrdr(), orgId);
@@ -74,8 +92,8 @@ public class CasePriorityServiceImpl extends BaseServiceImpl implements CasePrio
 
         Integer currOrder = curr.getOrdr();
         Integer neighborOrder = neighbor.getOrdr();
-        casePriorityDao.setOrder(id, neighborOrder);
-        casePriorityDao.setOrder(neighbor.getId(), currOrder);
+        casePriorityDao.setOrder(id, neighborOrder, orgId);
+        casePriorityDao.setOrder(neighbor.getId(), currOrder, orgId);
 
         return true;
 	}

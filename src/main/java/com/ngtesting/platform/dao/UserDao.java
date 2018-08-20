@@ -14,8 +14,8 @@ public interface UserDao {
                          @Param("keywords") String keywords,
                          @Param("exceptIds") String exceptIds);
 
-    TstUser get(Integer userId);
-    TstUser getByEmail(String nickname);
+    TstUser get(@Param("id") Integer id);
+    TstUser getByEmail(@Param("email") String email);
     TstUser getByEmailAndPassword(@Param("email") String email,
                                   @Param("password") String password);
     TstUser getByToken(@Param("token") String token);
@@ -23,6 +23,10 @@ public interface UserDao {
 
     void save(TstUser record);
     void update(TstUser record);
+
+    void modifyProp(@Param("id") Integer id,
+                    @Param("prop") String prop,
+                    @Param("value") String value);
 
     void setDefaultOrg(@Param("id") Integer id,
                        @Param("orgId") Integer orgId,
@@ -35,5 +39,4 @@ public interface UserDao {
     void setLeftSize(TstUser user);
 
     List<TstUser> getProjectUsers(@Param("prjId") Integer prjId);
-
 }

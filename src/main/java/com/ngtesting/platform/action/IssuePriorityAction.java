@@ -37,7 +37,7 @@ public class IssuePriorityAction extends BaseAction {
 	public Map<String, Object> list(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
 
-		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
+		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 		Integer orgId = userVo.getDefaultOrgId();
 
 		List<TstCasePriority> vos = casePriorityService.list(orgId);
@@ -53,7 +53,7 @@ public class IssuePriorityAction extends BaseAction {
 	public Map<String, Object> get(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
 
-		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
+		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 
 		Integer id = json.getInteger("id");
 		if (id == null) {
@@ -75,7 +75,7 @@ public class IssuePriorityAction extends BaseAction {
 	public Map<String, Object> save(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
 
-		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
+		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 		Integer orgId = userVo.getDefaultOrgId();
 
 //		CasePriorityVo vo = json.getObject("model", CasePriorityVo.class);
@@ -96,9 +96,9 @@ public class IssuePriorityAction extends BaseAction {
 	public Map<String, Object> delete(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
 
-		Integer id = json.getInteger("id");
-
-		casePriorityService.delete(id);
+//		Integer id = json.getInteger("id");
+//
+//		casePriorityService.delete(id, orgId);
 
 		ret.put("code", Constant.RespCode.SUCCESS.getCode());
 		return ret;
@@ -109,11 +109,11 @@ public class IssuePriorityAction extends BaseAction {
 	public Map<String, Object> setDefault(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
 
-		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
+		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 		Integer orgId = userVo.getDefaultOrgId();
 		Integer id = json.getInteger("id");
 
-		boolean success = casePriorityService.setDefaultPers(id, orgId);
+		boolean success = casePriorityService.setDefault(id, orgId);
 //		List<CasePriorityVo> vos = casePriorityService.listVos(orgId);
 //
 //        ret.put("data", vos);
@@ -127,12 +127,12 @@ public class IssuePriorityAction extends BaseAction {
 	public Map<String, Object> changeOrder(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
 
-		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
+		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 		Integer orgId = userVo.getDefaultOrgId();
 		Integer id = json.getInteger("id");
 		String act = json.getString("act");
 
-		boolean success = casePriorityService.changeOrderPers(id, act, orgId);
+		boolean success = casePriorityService.changeOrder(id, act, orgId);
 
 //		List<CasePriorityVo> vos = casePriorityService.listVos(orgId);
 //

@@ -13,8 +13,12 @@ public interface OrgRoleDao {
                            @Param("keywords") String keywords,
                            @Param("disabled") Boolean disabled);
 
-    TstOrgRole get(@Param("id") Integer id);
+    TstOrgRole get(@Param("id") Integer id,
+                   @Param("orgId") Integer orgId);
 
-    void save(TstOrgRole vo);
-    void update(TstOrgRole vo);
+    Integer save(TstOrgRole vo);
+    Integer update(TstOrgRole vo);
+
+    Integer delete(@Param("id") Integer id,
+                @Param("orgId") Integer orgId);
 }

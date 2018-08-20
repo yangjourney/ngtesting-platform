@@ -1,7 +1,5 @@
 package com.ngtesting.platform.service.impl;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.github.pagehelper.PageHelper;
 import com.ngtesting.platform.config.Constant;
 import com.ngtesting.platform.dao.TestPlanDao;
@@ -16,9 +14,6 @@ import java.util.List;
 
 @Service
 public class TestPlanServiceImpl extends BaseServiceImpl implements TestPlanService {
-//    @Autowired
-//    ProjectService projectService;
-
     @Autowired
     HistoryService historyService;
 
@@ -34,10 +29,10 @@ public class TestPlanServiceImpl extends BaseServiceImpl implements TestPlanServ
     }
 
     @Override
-    public TstPlan getById(Integer id) {
+    public TstPlan getById(Integer id, Integer projectId) {
         TstPlan po;
         if (id != null) {
-            po = testPlanDao.get(id);
+            po = testPlanDao.get(id, projectId);
             genVo(po);
         } else {
             po = new TstPlan();
@@ -46,19 +41,21 @@ public class TestPlanServiceImpl extends BaseServiceImpl implements TestPlanServ
     }
 
     @Override
-    public TstPlan save(JSONObject json, TstUser user) {
-        TstPlan vo = JSON.parseObject(JSON.toJSONString(json), TstPlan.class);
+    public TstPlan save(TstPlan vo, TstUser user, Integer projectId) {
         vo.setUserId(user.getId());
+        vo.setProjectId(projectId);
 
         Constant.MsgType action;
-        if (vo.getId() != null) {
-            action = Constant.MsgType.update;
-
-            testPlanDao.update(vo);
-        } else {
+        if (vo.getId() == null) {
             action = Constant.MsgType.create;
 
             testPlanDao.save(vo);
+        } else {
+            action = Constant.MsgType.update;
+            Integer count = testPlanDao.update(vo);
+            if (count == 0) {
+                return null;
+            }
         }
 
         historyService.create(vo.getProjectId(), user, action.msg, TstHistory.TargetType.plan,
@@ -68,8 +65,9 @@ public class TestPlanServiceImpl extends BaseServiceImpl implements TestPlanServ
     }
 
     @Override
-    public void delete(Integer id, Integer clientId) {
-        testPlanDao.delete(id);
+    public Boolean delete(Integer id, Integer projectId) {
+        Integer count = testPlanDao.delete(id, projectId);
+        return count > 0;
     }
 
     @Override

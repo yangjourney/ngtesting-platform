@@ -8,18 +8,17 @@ public interface CustomFieldService extends BaseService {
 	List<TstCustomField> list(Integer orgId);
     List<TstCustomField> listForCaseByProject(Integer orgId, Integer projectId);
 
-	TstCustomField get(Integer customFieldId);
+	TstCustomField get(Integer customFieldId, Integer orgId);
 
 	TstCustomField save(TstCustomField vo, Integer orgId);
-	boolean delete(Integer id);
+	Boolean delete(Integer id, Integer orgId);
+	Boolean changeOrderPers(Integer id, String act, Integer orgId);
 
 	List<String> listApplyTo();
 
 	List<String> listType();
 
 	List<String> listFormat();
-
-	boolean changeOrderPers(Integer id, String act, Integer orgId);
 
     String getLastUnusedColumn(Integer orgId);
 

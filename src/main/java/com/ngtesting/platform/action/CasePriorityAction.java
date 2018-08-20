@@ -38,8 +38,8 @@ public class CasePriorityAction extends BaseAction {
 	public Map<String, Object> list(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
 
-		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
-		Integer orgId = userVo.getDefaultOrgId();
+		TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
+		Integer orgId = user.getDefaultOrgId();
 
 		List<TstCasePriority> vos = casePriorityService.list(orgId);
 
@@ -53,6 +53,8 @@ public class CasePriorityAction extends BaseAction {
 	@ResponseBody
 	public Map<String, Object> get(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
+		TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
+		Integer orgId = user.getDefaultOrgId();
 
 		Integer id = json.getInteger("id");
 		TstCasePriority po;
@@ -60,7 +62,7 @@ public class CasePriorityAction extends BaseAction {
 			po = new TstCasePriority();
 			po.setValue(UUID.randomUUID().toString());
 		} else {
-			po = casePriorityService.get(id);
+			po = casePriorityService.get(id, orgId);
 		}
 
 		ret.put("data", po);
@@ -73,12 +75,15 @@ public class CasePriorityAction extends BaseAction {
 	public Map<String, Object> save(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
 
-		TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
+		TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 		Integer orgId = user.getDefaultOrgId();
 
 		TstCasePriority vo = json.getObject("model", TstCasePriority.class);
 
 		TstCasePriority po = casePriorityService.save(vo, orgId);
+		if (po == null) {
+			return authFail();
+		}
 
 		Map<String,Map<String,String>> casePropertyMap = casePropertyService.getMap(orgId);
 		ret.put("casePropertyMap", casePropertyMap);
@@ -93,9 +98,15 @@ public class CasePriorityAction extends BaseAction {
 	public Map<String, Object> delete(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
 
+		TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
+		Integer orgId = user.getDefaultOrgId();
+
 		Integer id = json.getInteger("id");
 
-		casePriorityService.delete(id);
+		Boolean result = casePriorityService.delete(id, orgId);
+        if (!result) {
+            return authFail();
+        }
 
 		ret.put("code", Constant.RespCode.SUCCESS.getCode());
 		return ret;
@@ -106,11 +117,15 @@ public class CasePriorityAction extends BaseAction {
 	public Map<String, Object> setDefault(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
 
-		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
+		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 		Integer orgId = userVo.getDefaultOrgId();
 		Integer id = json.getInteger("id");
 
-		boolean success = casePriorityService.setDefaultPers(id, orgId);
+		Boolean result = casePriorityService.setDefault(id, orgId);
+        if (!result) {
+            return authFail();
+        }
+
 		List<TstCasePriority> vos = casePriorityService.list(orgId);
 
         ret.put("data", vos);
@@ -124,12 +139,15 @@ public class CasePriorityAction extends BaseAction {
 	public Map<String, Object> changeOrder(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
 
-		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
+		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 		Integer orgId = userVo.getDefaultOrgId();
 		Integer id = json.getInteger("id");
 		String act = json.getString("act");
 
-		boolean success = casePriorityService.changeOrderPers(id, act, orgId);
+        Boolean result = casePriorityService.changeOrder(id, act, orgId);
+        if (!result) {
+            return authFail();
+        }
 
 		List<TstCasePriority> vos = casePriorityService.list(orgId);
 

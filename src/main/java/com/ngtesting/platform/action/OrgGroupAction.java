@@ -36,7 +36,7 @@ public class OrgGroupAction extends BaseAction {
 	public Map<String, Object> list(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
 
-		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
+		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 		Integer orgId = userVo.getDefaultOrgId();
 
 		String keywords = json.getString("keywords");
@@ -58,22 +58,30 @@ public class OrgGroupAction extends BaseAction {
 	public Map<String, Object> get(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
 
-		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
+		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 		Integer orgId = userVo.getDefaultOrgId();
 		Integer orgGroupId = json.getInteger("id");
 
-		TstOrgGroup po = orgGroupService.get(orgGroupId);
+		TstOrgGroup group;
+		if (orgGroupId == null) {
+			group = new TstOrgGroup();
+            group.setOrgId(orgId);
+		} else {
+			group = orgGroupService.get(orgGroupId, orgId);
+		}
+		if (group == null) {
+            return authFail();
+        }
 
 		List<TstOrgGroupUserRelation> relations = orgGroupUserService.listRelationsByGroup(orgId, orgGroupId);
 		if (orgGroupId == null) {
-
 			ret.put("group", new TstOrgGroup());
 	        ret.put("relations", relations);
 			ret.put("code", Constant.RespCode.SUCCESS.getCode());
 			return ret;
 		}
 
-        ret.put("group", po);
+        ret.put("group", group);
         ret.put("relations", relations);
 		ret.put("code", Constant.RespCode.SUCCESS.getCode());
 		return ret;
@@ -84,14 +92,18 @@ public class OrgGroupAction extends BaseAction {
 	public Map<String, Object> save(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
 
-		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
-		Integer orgId = userVo.getDefaultOrgId();
+		TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
+		Integer orgId = user.getDefaultOrgId();
 
 		TstOrgGroup group = JSON.parseObject(JSON.toJSONString(json.get("group")), TstOrgGroup.class);;
 		List<TstOrgGroupUserRelation> relations = (List<TstOrgGroupUserRelation>) json.get("relations");
 
 		TstOrgGroup po = orgGroupService.save(group, orgId);
-		boolean success = orgGroupUserService.saveRelationsForGroup(orgId, po.getId(), relations);
+        if (po == null) {
+            return authFail();
+        }
+
+		orgGroupUserService.saveRelationsForGroup(orgId, po.getId(), relations);
 
 		ret.put("code", Constant.RespCode.SUCCESS.getCode());
 		return ret;
@@ -101,10 +113,15 @@ public class OrgGroupAction extends BaseAction {
 	@ResponseBody
 	public Map<String, Object> delete(HttpServletRequest request, @RequestBody JSONObject to) {
 		Map<String, Object> ret = new HashMap<String, Object>();
+		TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
+		Integer orgId = user.getDefaultOrgId();
 
-		Integer id = to.getInteger("id");
+		Integer groupId = to.getInteger("id");
 
-		boolean success = orgGroupService.delete(id);
+		Boolean result = orgGroupService.delete(groupId, orgId);
+        if (!result) {
+            return authFail();
+        }
 
 		ret.put("code", Constant.RespCode.SUCCESS.getCode());
 		return ret;

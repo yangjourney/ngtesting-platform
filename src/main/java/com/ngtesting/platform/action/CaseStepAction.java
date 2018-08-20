@@ -26,38 +26,12 @@ public class CaseStepAction extends BaseAction {
     @ResponseBody
     public Map<String, Object> save(HttpServletRequest request, @RequestBody JSONObject json) {
         Map<String, Object> ret = new HashMap<String, Object>();
+        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 
-        TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
-
-        TstCaseStep po = caseStepService.save(json, userVo.getId());
-
-        ret.put("data", po);
-        ret.put("code", Constant.RespCode.SUCCESS.getCode());
-        return ret;
-    }
-
-    @RequestMapping(value = "up", method = RequestMethod.POST)
-    @ResponseBody
-    public Map<String, Object> up(HttpServletRequest request, @RequestBody JSONObject json) {
-        Map<String, Object> ret = new HashMap<String, Object>();
-
-        TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
-
-        TstCaseStep po = caseStepService.changeOrderPers(json, "up", userVo.getId());
-
-        ret.put("data", po);
-        ret.put("code", Constant.RespCode.SUCCESS.getCode());
-        return ret;
-    }
-
-    @RequestMapping(value = "down", method = RequestMethod.POST)
-    @ResponseBody
-    public Map<String, Object> down(HttpServletRequest request, @RequestBody JSONObject json) {
-        Map<String, Object> ret = new HashMap<String, Object>();
-
-        TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
-
-        TstCaseStep po = caseStepService.changeOrderPers(json, "down", userVo.getId());
+        TstCaseStep po = caseStepService.save(json, user);
+        if (po == null) {
+            return authFail();
+        }
 
         ret.put("data", po);
         ret.put("code", Constant.RespCode.SUCCESS.getCode());
@@ -69,9 +43,42 @@ public class CaseStepAction extends BaseAction {
     public Map<String, Object> delete(HttpServletRequest request, @RequestBody JSONObject json) {
         Map<String, Object> ret = new HashMap<String, Object>();
 
-        TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
+        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 
-        boolean success = caseStepService.delete(json.getInteger("id"), userVo.getId());
+        Boolean result = caseStepService.delete(json.getInteger("id"), user);
+        if (!result) {
+            return authFail();
+        }
+
+        ret.put("code", Constant.RespCode.SUCCESS.getCode());
+        return ret;
+    }
+
+    @RequestMapping(value = "up", method = RequestMethod.POST)
+    @ResponseBody
+    public Map<String, Object> up(HttpServletRequest request, @RequestBody JSONObject json) {
+        Map<String, Object> ret = new HashMap<String, Object>();
+        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
+
+        Boolean result = caseStepService.changeOrder(json, "up", user);
+        if (!result) {
+            return authFail();
+        }
+
+        ret.put("code", Constant.RespCode.SUCCESS.getCode());
+        return ret;
+    }
+
+    @RequestMapping(value = "down", method = RequestMethod.POST)
+    @ResponseBody
+    public Map<String, Object> down(HttpServletRequest request, @RequestBody JSONObject json) {
+        Map<String, Object> ret = new HashMap<String, Object>();
+        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
+
+        Boolean result = caseStepService.changeOrder(json, "down", user);
+        if (!result) {
+            return authFail();
+        }
 
         ret.put("code", Constant.RespCode.SUCCESS.getCode());
         return ret;

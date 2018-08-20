@@ -10,6 +10,7 @@ import com.ngtesting.platform.service.CaseAttachmentService;
 import com.ngtesting.platform.service.CaseHistoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class CaseAttachmentServiceImpl extends BaseServiceImpl implements CaseAttachmentService {
@@ -21,21 +22,32 @@ public class CaseAttachmentServiceImpl extends BaseServiceImpl implements CaseAt
     CaseDao caseDao;
 
     @Override
-    public void uploadAttachmentPers(Integer caseId, String name, String path, TstUser user) {
+    @Transactional
+    public Boolean save(Integer caseId, String name, String path, TstUser user) {
+        TstCase testCase = caseDao.get(caseId, user.getDefaultPrjId());
+        if (testCase == null) {
+            return false;
+        }
+
         TstCaseAttachment attach = new TstCaseAttachment(name, path, caseId, user.getId());
         caseAttachmentDao.save(attach);
-
-        TstCase testCase = caseDao.get(caseId);
-        caseHistoryService.saveHistory(user, Constant.CaseAct.upload_attachment, testCase, name);
+        caseHistoryService.saveHistory(user, Constant.CaseAct.attachment_upload, testCase, name);
+        return true;
     }
 
     @Override
-    public void removeAttachmentPers(Integer id, TstUser user) {
-        caseAttachmentDao.delete(id);
-
+    @Transactional
+    public Boolean delete(Integer id, TstUser user) {
         TstCaseAttachment attach = caseAttachmentDao.get(id);
-        TstCase testCase = caseDao.get(attach.getCaseId());
-        caseHistoryService.saveHistory(user, Constant.CaseAct.delete_attachment, testCase, attach.getName());
+        TstCase testCase = caseDao.get(attach.getCaseId(), user.getDefaultPrjId());
+        if (testCase == null) {
+            return false;
+        }
+
+        caseAttachmentDao.delete(id);
+        caseHistoryService.saveHistory(user, Constant.CaseAct.attachment_delete, testCase, attach.getName());
+
+        return true;
     }
 
 }

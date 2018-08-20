@@ -32,8 +32,9 @@ public class EnvAction extends BaseAction {
     @ResponseBody
     public Map<String, Object> list(HttpServletRequest request, @RequestBody JSONObject json) {
         Map<String, Object> ret = new HashMap<String, Object>();
-        TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
-        Integer projectId = json.getInteger("projectId");
+        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
+        Integer projectId = user.getDefaultPrjId();
+
         String keywords = json.getString("keywords");
         Boolean disabled = json.getBoolean("disabled");
 
@@ -48,9 +49,12 @@ public class EnvAction extends BaseAction {
     @ResponseBody
     public Map<String, Object> get(HttpServletRequest request, @RequestBody JSONObject json) {
         Map<String, Object> ret = new HashMap<String, Object>();
+        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
+        Integer projectId = user.getDefaultPrjId();
+
         Integer id = json.getInteger("id");
 
-        TstEnv vo = envService.getById(id);
+        TstEnv vo = envService.getById(id, projectId);
 
         ret.put("data", vo);
         ret.put("code", Constant.RespCode.SUCCESS.getCode());
@@ -61,9 +65,12 @@ public class EnvAction extends BaseAction {
     @ResponseBody
     public Map<String, Object> save(HttpServletRequest request, @RequestBody JSONObject json) {
         Map<String, Object> ret = new HashMap<String, Object>();
-        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
+        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 
         TstEnv po = envService.save(json, user);
+        if(po == null) {
+            return authFail();
+        }
 
         ret.put("data", po);
         ret.put("code", Constant.RespCode.SUCCESS.getCode());
@@ -74,10 +81,15 @@ public class EnvAction extends BaseAction {
     @ResponseBody
     public Map<String, Object> delete(HttpServletRequest request, @RequestBody JSONObject json) {
         Map<String, Object> ret = new HashMap<String, Object>();
-        TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
+        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
+        Integer projectId = user.getDefaultPrjId();
+
         Integer id = json.getInteger("id");
 
-        envService.delete(id, userVo.getId());
+        Boolean result = envService.delete(id, projectId);
+        if (!result) {
+            return authFail();
+        }
 
         ret.put("code", Constant.RespCode.SUCCESS.getCode());
         return ret;
@@ -87,13 +99,18 @@ public class EnvAction extends BaseAction {
     @ResponseBody
     public Map<String, Object> changeOrder(HttpServletRequest request, @RequestBody JSONObject json) {
         Map<String, Object> ret = new HashMap<String, Object>();
+        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
+        Integer projectId = user.getDefaultPrjId();
 
-        Integer projectId = json.getInteger("projectId");
         Integer id = json.getInteger("id");
         String act = json.getString("act");
 
-        boolean success = envService.changeOrder(id, act, projectId);
-        List<TstEnv> vos = envService.list(projectId, null, null);
+        Boolean result = envService.changeOrder(id, act, projectId);
+        if (!result) {
+            return authFail();
+        }
+
+        List<TstEnv> vos = envService.list(projectId, null, false);
 
         ret.put("data", vos);
         ret.put("code", Constant.RespCode.SUCCESS.getCode());

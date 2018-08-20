@@ -34,9 +34,8 @@ public class OrgRoleAction extends BaseAction {
 	@ResponseBody
 	public Map<String, Object> list(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
-
-		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
-		Integer orgId = userVo.getDefaultOrgId();
+		TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
+		Integer orgId = user.getDefaultOrgId();
 
 		String keywords = json.getString("keywords");
 		Boolean disabled = json.getBoolean("disabled");
@@ -53,11 +52,20 @@ public class OrgRoleAction extends BaseAction {
 	public Map<String, Object> get(HttpServletRequest request, @RequestBody JSONObject req) {
 		Map<String, Object> ret = new HashMap<String, Object>();
 
-		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
+		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 		Integer orgId = userVo.getDefaultOrgId();
 		Integer orgRoleId = req.getInteger("id");
 
-        TstOrgRole po = orgRoleService.get(orgRoleId);
+		TstOrgRole po;
+		if (orgRoleId == null) {
+			po = new TstOrgRole();
+			po.setOrgId(orgId);
+		} else {
+			po = orgRoleService.get(orgRoleId, orgId);
+		}
+        if (po == null) {
+            return authFail();
+        }
 
 		List<TstOrgRolePrivilegeRelation> privileges =
                 orgRolePrivilegeRelationService.listRelationsByOrgRole(orgId, orgRoleId);
@@ -81,17 +89,20 @@ public class OrgRoleAction extends BaseAction {
 	public Map<String, Object> save(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
 
-		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
+		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 		Integer orgId = userVo.getDefaultOrgId();
 
 		TstOrgRole orgRoleVo = JSON.parseObject(JSON.toJSONString(json.get("orgRole")), TstOrgRole.class);
 		TstOrgRole po = orgRoleService.save(orgRoleVo, orgId);
+		if (po == null) {
+			return authFail();
+		}
 
 		List<TstOrgRolePrivilegeRelation> privileges = (List<TstOrgRolePrivilegeRelation>) json.get("privileges");
-		boolean success = orgRolePrivilegeRelationService.saveRelationsForRole(orgId, po.getId(), privileges);
+		orgRolePrivilegeRelationService.saveRelationsForRole(orgId, po.getId(), privileges);
 
         List<TstOrgRoleUserRelation> users = (List<TstOrgRoleUserRelation>) json.get("users");
-        success = orgRoleUserRelationService.saveRelationsForRole(orgId, po.getId(), users);
+        orgRoleUserRelationService.saveRelationsForRole(orgId, po.getId(), users);
 
 		ret.put("code", Constant.RespCode.SUCCESS.getCode());
 		return ret;
@@ -101,8 +112,13 @@ public class OrgRoleAction extends BaseAction {
 	@ResponseBody
 	public Map<String, Object> delete(HttpServletRequest request, @RequestBody JSONObject to) {
 		Map<String, Object> ret = new HashMap<String, Object>();
+        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
+        Integer orgId = user.getDefaultOrgId();
 
-		boolean success = orgRoleService.delete(to.getInteger("id"));
+		Boolean result = orgRoleService.delete(to.getInteger("id"), orgId);
+        if (!result) {
+            return authFail();
+        }
 
 		ret.put("code", Constant.RespCode.SUCCESS.getCode());
 		return ret;

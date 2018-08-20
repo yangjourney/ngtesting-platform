@@ -34,14 +34,17 @@ public class ReportAction extends BaseAction {
         Map<String, Object> ret = new HashMap<String, Object>();
         Map<String, Object> data = new HashMap<String, Object>();
 
-        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
+        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 
-        Integer id = json.getInteger("orgId");
+        Integer orgId = json.getInteger("orgId");
+        if (userNotInOrg(user.getId(), orgId)) {
+            return authFail();
+        }
 
         Map<String, List<Object>> designReport =
-                reportService.chartDesignProgressByProject(id, TstProject.ProjectType.org, 14);
+                reportService.chartDesignProgressByProject(orgId, TstProject.ProjectType.org, 14);
         Map<String, List<Object>> exeReport =
-                reportService.chartExcutionProcessByProject(id, TstProject.ProjectType.org, 14);
+                reportService.chartExcutionProcessByProject(orgId, TstProject.ProjectType.org, 14);
 
         data.put("design", designReport);
         data.put("exe", exeReport);
@@ -57,10 +60,14 @@ public class ReportAction extends BaseAction {
         Map<String, Object> ret = new HashMap<String, Object>();
         Map<String, Object> data = new HashMap<String, Object>();
 
-        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
+        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 
         Integer projectId = json.getInteger("projectId");
         TstProject prj = projectService.get(projectId);
+        if (prj.getType().equals(TstProject.ProjectType.project) &&
+                userNotInProject(user.getId(), projectId)) {
+            return authFail();
+        }
 
         Map<String, List<Object>> designReport =
                 reportService.chartDesignProgressByProject(projectId, prj.getType(), 14);

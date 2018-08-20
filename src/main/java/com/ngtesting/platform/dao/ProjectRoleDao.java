@@ -13,9 +13,11 @@ public interface ProjectRoleDao {
     TstProjectRole getRoleByCode(@Param("orgId") Integer orgId,
                           @Param("roleCode") String roleCode);
 
-    TstProjectRole get(@Param("id") Integer roleId);
+    TstProjectRole get(@Param("id") Integer roleId,
+                       @Param("orgId") Integer orgId);
 
-    void save(TstProjectRole vo);
-
-    void update(TstProjectRole vo);
+    Integer save(TstProjectRole vo);
+    Integer update(TstProjectRole vo);
+    Integer delete(@Param("id") Integer roleId,
+                @Param("orgId") Integer orgId);
 }

@@ -14,7 +14,7 @@
         <if test="keywords != null and keywords != ''">
             AND o.name LIKE CONCAT('%','${keywords}','%' )
         </if>
-        <if test="disabled != null and disabled != ''">
+        <if test="disabled != null">
             AND o.disabled = #{disabled}
         </if>
 
@@ -58,11 +58,11 @@
     <update id="update" parameterType="TstSuite">
         UPDATE TstSuite
         SET name=#{name},estimate=#{estimate},descr=#{descr},
-        projectId=#{projectId},caseProjectId=#{caseProjectId},userId=#{userId},
+        caseProjectId=#{caseProjectId},userId=#{userId},
         disabled=#{disabled},
         updateTime=NOW()
 
-        WHERE id=#{id}
+        WHERE id=#{id} AND projectId=#{projectId}
     </update>
 
     <select id="get" resultType="TstSuite">
@@ -77,12 +77,15 @@
         JOIN TstProject casePrj ON casePrj.id=o.caseProjectId
 
         WHERE o.id = #{id}
+        <if test="projectId != null">
+            AND o.projectId=#{projectId}
+        </if>
     </select>
 
     <update id="delete">
         UPDATE TstSuite
         SET deleted = TRUE
-        WHERE id=#{id}
+        WHERE id=#{id} AND projectId=#{projectId}
     </update>
 
     <select id="listCaseIds" resultType="int">

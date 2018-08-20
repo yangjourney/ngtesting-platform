@@ -38,10 +38,13 @@ public class TestTaskServiceImpl extends BaseServiceImpl implements TestTaskServ
     TestPlanDao planDao;
 
     @Override
-    public TstTask getById(Integer id) {
-        TstTask po = taskDao.getDetail(id);
-        TstTask vo = genVo(po);
+    public TstTask getById(Integer id, Integer projectId) {
+        TstTask po = taskDao.getDetail(id, projectId);
+        if (po == null) {
+            return null;
+        }
 
+        TstTask vo = genVo(po);
         return vo;
     }
 
@@ -50,41 +53,48 @@ public class TestTaskServiceImpl extends BaseServiceImpl implements TestTaskServ
     public TstTask save(JSONObject json, TstUser user) {
         TstTask task = JSON.parseObject(JSON.toJSONString(json), TstTask.class);
         task.setUserId(user.getId());
+        task.setProjectId(user.getDefaultPrjId());
+
+        if (task.getCaseProjectId() == null) {
+            task.setCaseProjectId(task.getProjectId());
+        }
 
         Constant.MsgType action = null;
-        if (task.getId() != null) {
-            action = Constant.MsgType.update;
-            taskDao.update(task);
-
-            taskDao.removeAssignees(task.getId());
-        } else {
+        if (task.getId() == null) {
             action = Constant.MsgType.create;
 
-            if (task.getCaseProjectId() == null) {
-                task.setCaseProjectId(task.getProjectId());
-            }
             taskDao.save(task);
+        } else {
+            action = Constant.MsgType.update;
+            Integer count = taskDao.update(task);
+            if (count == null) {
+                return null;
+            }
+
+            taskDao.removeAssignees(task.getId());
         }
 
         List assignees = json.getJSONArray("assignees");
         taskDao.saveAssignees(task.getId(), assignees);
 
-        importSuiteCasesPers(task, JSON.parseObject(JSON.toJSONString(json.get("suites")), List.class));
+        List<TstSuite> suites = JSON.parseObject(JSON.toJSONString(json.get("suites")), List.class);
+
+        importSuiteCasesPers(task, suites, user);
 
         alertService.create(task);
         msgService.create(task, action, user);
         historyService.create(task.getProjectId(), user, action.msg, TstHistory.TargetType.task,
                 task.getId(), task.getName());
 
-        TstTask ret = taskDao.getDetail(task.getId());
+        TstTask ret = taskDao.getDetail(task.getId(), null);
         return ret;
     }
 
     @Override
     @Transactional
-    public boolean importSuiteCasesPers(TstTask task, List<TstSuite> suites) {
+    public void importSuiteCasesPers(TstTask task, List<TstSuite> suites, TstUser optUser) {
         if (suites == null || suites.size() == 0) {
-            return false;
+            return;
         }
 
         Integer caseProjectId = null;
@@ -98,17 +108,19 @@ public class TestTaskServiceImpl extends BaseServiceImpl implements TestTaskServ
             }
         }
 
+        if (suiteIds.size() == 0) {
+            return;
+        }
+
         String suiteIdsStr = StringUtil.join(suiteIds.toArray(), ",");
         taskDao.addCasesBySuites(task.getId(), suiteIdsStr);
 
         if (caseProjectId != null &&
                 (task.getCaseProjectId() == null ||  caseProjectId.intValue() != task.getCaseProjectId().intValue())) {
             taskDao.updateCaseProject(task.getId(), caseProjectId);
-        } else {
-            return false;
         }
 
-        return true;
+        msgService.create(task, Constant.MsgType.create, optUser);
     }
 
     @Override
@@ -139,16 +151,19 @@ public class TestTaskServiceImpl extends BaseServiceImpl implements TestTaskServ
     }
 
     @Override
-    public void delete(Integer id, Integer userId) {
-        taskDao.delete(id, userId);
+    public Boolean delete(Integer id, Integer projectId) {
+        Integer count = taskDao.delete(id, projectId);
+        return count > 0;
     }
 
     @Override
-    public void closePers(Integer id, Integer userId) {
-        taskDao.close(id, userId);
+    public Boolean close(Integer id, Integer projectId) {
+        Integer count = taskDao.close(id, projectId);
+        return count > 0;
     }
+
     @Override
-    public void closePlanIfAllTaskClosedPers(Integer planId) {
+    public void closePlanIfAllTaskClosed(Integer planId) {
         planDao.closePlanIfAllTaskClosed(planId);
     }
 
@@ -215,49 +230,6 @@ public class TestTaskServiceImpl extends BaseServiceImpl implements TestTaskServ
         }
 
 		return po;
-	}
-
-	@Override
-	public List<TstCaseInTask> genCaseVos(List<TstCaseInTask> pos) {
-		List<TstCaseInTask> vos = new LinkedList();
-
-		for (TstCaseInTask po: pos) {
-			TstCaseInTask vo = genCaseVo(po);
-			vos.add(vo);
-		}
-		return vos;
-	}
-
-	@Override
-	public TstCaseInTask genCaseVo(TstCaseInTask po) {
-		TstCaseInTask vo = new TstCaseInTask();
-
-//        TestCase testcase = po.getTestCase();
-//		BeanUtilEx.copyProperties(vo, testcase);
-//
-//		vo.setSteps(new LinkedList<TstCaseStep>());
-//
-//		List<TestCaseStep> steps = testcase.getSteps();
-//		for (TestCaseStep step : steps) {
-//			TstCaseStep stepVo = new TstCaseStep(
-//					step.getId(), step.getOpt(), step.getExpect(), step.getOrdr(), step.getTestCaseId());
-//
-//			vo.getSteps().add(stepVo);
-//		}
-		return vo;
-	}
-
-	private Integer getChildMaxOrderNumb(TstTask parent) {
-//		String hql = "select max(ordr) from TstTask where parentId = " + parent.getId();
-//		Integer maxOrder = (Integer) getByHQL(hql);
-//
-//		if (maxOrder == null) {
-//			maxOrder = 0;
-//		}
-//
-//		return maxOrder;
-
-        return 1;
 	}
 
 }

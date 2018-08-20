@@ -35,7 +35,7 @@ public class ProjectRoleAction extends BaseAction {
 	public Map<String, Object> list(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
 
-		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
+		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 		Integer orgId = userVo.getDefaultOrgId();
 
 		String keywords = json.getString("keywords");
@@ -48,25 +48,27 @@ public class ProjectRoleAction extends BaseAction {
 		return ret;
 	}
 
-
 	@RequestMapping(value = "get", method = RequestMethod.POST)
 	@ResponseBody
 	public Map<String, Object> get(HttpServletRequest request, @RequestBody JSONObject req) {
 		Map<String, Object> ret = new HashMap<String, Object>();
 
-		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
+		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 		Integer orgId = userVo.getDefaultOrgId();
 		Integer roleId = req.getInteger("id");
-
-		Map<String, Map<String, TstProjectPrivilegeDefine>> orgPrivileges =
-				projectPrivilegeService.listPrivilegesByOrgAndProjectRole(orgId, roleId);
 
 		TstProjectRole po = null;
 		if (roleId == null) {
 			po = new TstProjectRole();
 		} else {
-			po = projectRoleService.get(roleId);
+			po = projectRoleService.get(roleId, orgId);
+			if (po == null) {
+                return authFail();
+            }
 		}
+
+        Map<String, Map<String, TstProjectPrivilegeDefine>> orgPrivileges =
+                projectPrivilegeService.listPrivilegesByOrgAndProjectRole(orgId, roleId);
 
         ret.put("projectRole", po);
         ret.put("projectPrivileges", orgPrivileges);
@@ -79,16 +81,19 @@ public class ProjectRoleAction extends BaseAction {
 	public Map<String, Object> save(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
 
-		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
+		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 		Integer orgId = userVo.getDefaultOrgId();
 
-		TstProjectRole projectRoleVo = JSON.parseObject(JSON.toJSONString(json.get("projectRole")), TstProjectRole.class);
-		TstProjectRole po = projectRoleService.save(projectRoleVo, orgId);
+		TstProjectRole vo = JSON.parseObject(JSON.toJSONString(json.get("projectRole")), TstProjectRole.class);
+		TstProjectRole po = projectRoleService.save(vo, orgId);
+        if (po == null) {
+            return authFail();
+        }
 
 		Map<String, List<TstProjectPrivilegeDefine>> projectPrivileges =
 				(Map<String, List<TstProjectPrivilegeDefine>>) json.get("projectPrivileges");
 
-		boolean success = projectPrivilegeService.saveProjectPrivileges(orgId, po.getId(), projectPrivileges);
+		projectPrivilegeService.saveProjectPrivileges(orgId, po.getId(), projectPrivileges);
 
 		Map<String, Boolean> prjPrivileges = projectPrivilegeService.listByUser(userVo.getId(), userVo.getDefaultPrjId(), orgId);
 		ret.put("prjPrivileges", prjPrivileges);
@@ -102,8 +107,13 @@ public class ProjectRoleAction extends BaseAction {
 	@ResponseBody
 	public Map<String, Object> delete(HttpServletRequest request, @RequestBody JSONObject to) {
 		Map<String, Object> ret = new HashMap<String, Object>();
+		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
+		Integer orgId = userVo.getDefaultOrgId();
 
-		boolean success = projectRoleService.delete(to.getInteger("id"));
+		Boolean result = projectRoleService.delete(to.getInteger("id"), orgId);
+		if (!result) {
+            return authFail();
+        }
 
 		ret.put("code", Constant.RespCode.SUCCESS.getCode());
 		return ret;

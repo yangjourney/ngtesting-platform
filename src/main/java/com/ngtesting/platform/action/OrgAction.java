@@ -42,26 +42,31 @@ public class OrgAction extends BaseAction {
 	public Map<String, Object> list(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
 
-		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
+		TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 
 		String keywords = json.getString("keywords");
 		Boolean disabled = json.getBoolean("disabled");
 
-		List<TstOrg> vos = orgService.list(userVo.getId(), keywords, disabled);
+		List<TstOrg> vos = orgService.list(user.getId(), keywords, disabled);
 
         ret.put("data", vos);
 		ret.put("code", Constant.RespCode.SUCCESS.getCode());
 		return ret;
 	}
 
-
 	@RequestMapping(value = "get", method = RequestMethod.POST)
 	@ResponseBody
 	public Map<String, Object> get(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
-		Integer id = json.getInteger("id");
+		TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 
-		TstOrg po = orgService.get(id);
+		Integer orgId = json.getInteger("id");
+
+        if (userNotInOrg(user.getId(), orgId)) {
+            return authFail();
+        }
+
+		TstOrg po = orgService.get(orgId);
 
 		ret.put("data", po);
 		ret.put("code", Constant.RespCode.SUCCESS.getCode());
@@ -73,16 +78,19 @@ public class OrgAction extends BaseAction {
 	@ResponseBody
 	public Map<String, Object> view(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
+		TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 
-		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
-		Integer id = json.getInteger("id");
+		Integer orgId = json.getInteger("id");
+        if (userNotInOrg(user.getId(), orgId)) {
+            return authFail();
+        }
 
-		TstOrg po = orgService.get(id);
+		TstOrg po = orgService.get(orgId);
 
-		List<TstPlan> planPos = planService.listByOrg(id);
+		List<TstPlan> planPos = planService.listByOrg(orgId);
 		planService.genVos(planPos);
 
-		List<TstHistory> historyPos = historyService.listByOrg(id);
+		List<TstHistory> historyPos = historyService.listByOrg(orgId);
 		Map<String, List<TstHistory>> historyVos = historyService.genVosByDate(historyPos);
 
 		ret.put("org", po);
@@ -97,13 +105,17 @@ public class OrgAction extends BaseAction {
 	@ResponseBody
 	public Map<String, Object> save(HttpServletRequest request, @RequestBody TstOrg vo) {
 		Map<String, Object> ret = new HashMap<String, Object>();
+		TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 
-		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
+        if (vo.getId() != null && authDao.userNotInOrg(user.getId(), vo.getId())) {
+            return authFail();
+        }
 
-		orgService.save(vo, userVo.getId());
-        List<TstOrg> vos = orgService.list(userVo.getId(), "false", null);
+        TstOrg org = orgService.save(vo, user);
 
-        pushSettingsService.pushMyOrgs(userVo);
+        List<TstOrg> vos = orgService.list(user.getId(), "false", null);
+
+        pushSettingsService.pushMyOrgs(user);
 
 		ret.put("myOrgs", vos);
 		ret.put("code", Constant.RespCode.SUCCESS.getCode());
@@ -114,27 +126,33 @@ public class OrgAction extends BaseAction {
 	@ResponseBody
 	public Map<String, Object> delete(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
+        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 
-		Integer id = json.getInteger("id");
+		Integer orgId = json.getInteger("id");
+        if (userNotInOrg(user.getId(), orgId)) {
+            return authFail();
+        }
 
-		boolean success = orgService.delete(id);
+		orgService.delete(orgId);
 
 		ret.put("code", Constant.RespCode.SUCCESS.getCode());
 		return ret;
 	}
-
 
 	@RequestMapping(value = "change", method = RequestMethod.POST)
 	@ResponseBody
 	public Map<String, Object> change(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
 
-		TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
+		TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 		Integer orgId = json.getInteger("id");
+        if (userNotInOrg(user.getId(), orgId)) {
+            return authFail();
+        }
 
 		userService.setDefaultOrg(user, orgId);
 
-		pushSettingsService.pushOrgSettings(user);
+		pushSettingsService.pushOrgSettings(user, request);
 		pushSettingsService.pushRecentProjects(user);
 
 		ret.put("code", Constant.RespCode.SUCCESS.getCode());
@@ -142,19 +160,22 @@ public class OrgAction extends BaseAction {
 		return ret;
 	}
 
-
 	@RequestMapping(value = "setDefault", method = RequestMethod.POST)
 	@ResponseBody
 	public Map<String, Object> setDefault(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
+		TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 
-		TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
 		Integer orgId = json.getInteger("id");
 		String keywords = json.getString("keywords");
 		Boolean disabled = json.getBoolean("disabled");
 
+        if (userNotInOrg(user.getId(), orgId)) {
+            return authFail();
+        }
+
 		userService.setDefaultOrg(user, orgId);
-		pushSettingsService.pushOrgSettings(user);
+		pushSettingsService.pushOrgSettings(user, request);
 		pushSettingsService.pushRecentProjects(user);
 
         List<TstOrg> vos = orgService.list(user.getId(), keywords, disabled);

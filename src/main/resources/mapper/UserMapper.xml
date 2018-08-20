@@ -58,16 +58,22 @@
 
     <insert id="save" parameterType="TstUser" useGeneratedKeys="true" keyProperty="id">
         insert into TstUser (email,password,nickname,phone,avatar,token,
-          leftSizeCase,leftSizeIssue,defaultOrgId,defaultOrgName,defaultPrjId,defaultPrjName,
+          leftSizeDesign,leftSizeExe,defaultOrgId,defaultOrgName,defaultPrjId,defaultPrjName,
           deleted,disabled,createTime)
         values (#{email},#{password},#{nickname},#{phone},#{avatar},#{token},
-          #{leftSizeCase},#{leftSizeIssue},#{defaultOrgId},#{defaultOrgName},#{defaultPrjId},#{defaultPrjName},
+          #{leftSizeDesign},#{leftSizeExe},#{defaultOrgId},#{defaultOrgName},#{defaultPrjId},#{defaultPrjName},
           #{deleted},#{disabled},#{createTime})
     </insert>
 
     <update id="update" parameterType="TstUser">
         UPDATE TstUser
         SET email=#{email}, nickname=#{nickname}, phone=#{phone}, disabled=#{disabled}
+        WHERE id=#{id}
+    </update>
+
+    <update id="modifyProp">
+        UPDATE TstUser
+        SET ${prop} = #{value}, updateTime=NOW()
         WHERE id=#{id}
     </update>
 
@@ -84,13 +90,12 @@
 
     <update id="setLeftSize" parameterType="TstUser">
         UPDATE TstUser
-        SET leftSizeCase=#{leftSizeCase}, leftSizeIssue=#{leftSizeIssue}
+        SET leftSizeDesign=#{leftSizeDesign}, leftSizeExe=#{leftSizeExe}
         WHERE id=#{id}
     </update>
 
     <select id="search" resultType="TstUser">
         SELECT * FROM TstUser usr
-
         JOIN TstOrgUserRelation r ON r.orgId = #{orgId} AND r.userId = usr.id
 
         WHERE TRUE

@@ -39,7 +39,7 @@ public class MsgAction extends BaseAction {
 	public Map<String, Object> list(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
 
-		TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
+		TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 
         String keywords = json.getString("keywords");
         Boolean isRead = json.getBoolean("isRead");
@@ -55,20 +55,6 @@ public class MsgAction extends BaseAction {
 		return ret;
 	}
 
-    @RequestMapping(value = "get", method = RequestMethod.POST)
-    @ResponseBody
-    public Map<String, Object> get(HttpServletRequest request, @RequestBody JSONObject json) {
-        Map<String, Object> ret = new HashMap<String, Object>();
-
-        Integer msgId = json.getInteger("id");
-
-        TstMsg vo = msgService.getById(msgId);
-
-        ret.put("data", vo);
-        ret.put("code", Constant.RespCode.SUCCESS.getCode());
-        return ret;
-    }
-
 	@RequestMapping(value = "delete", method = RequestMethod.POST)
 	@ResponseBody
 	public Map<String, Object> delete(HttpServletRequest request, @RequestBody JSONObject json) {
@@ -76,9 +62,12 @@ public class MsgAction extends BaseAction {
 
 		Integer id = json.getInteger("id");
 
-		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
+		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 
-		msgService.delete(id, userVo.getId());
+		Boolean result = msgService.delete(id, userVo.getId());
+		if (!result) {
+            return authFail();
+        }
 
 		ret.put("code", Constant.RespCode.SUCCESS.getCode());
 		return ret;
@@ -88,15 +77,16 @@ public class MsgAction extends BaseAction {
     @ResponseBody
     public Map<String, Object> markRead(HttpServletRequest request, @RequestBody JSONObject json) {
         Map<String, Object> ret = new HashMap<String, Object>();
-
-        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
+        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 
         Integer id = json.getInteger("id");
-        TstMsg msg = msgService.markReadPers(id);
+        Boolean result = msgService.markRead(id, user.getId());
+        if (!result) {
+            return authFail();
+        }
 
         optFacade.opt(WsConstant.WS_TODO, user);
 
-        ret.put("data", msg);
         ret.put("code", Constant.RespCode.SUCCESS.getCode());
         return ret;
     }
@@ -106,9 +96,9 @@ public class MsgAction extends BaseAction {
     public Map<String, Object> markAllRead(HttpServletRequest request, @RequestBody JSONObject json) {
         Map<String, Object> ret = new HashMap<String, Object>();
 
-        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
+        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 
-		msgService.markAllReadPers(user.getId());
+		msgService.markAllRead(user.getId());
 		optFacade.opt(WsConstant.WS_TODO, user);
 
         ret.put("code", Constant.RespCode.SUCCESS.getCode());

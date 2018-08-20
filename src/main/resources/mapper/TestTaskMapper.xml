@@ -40,11 +40,18 @@
         LEFT JOIN TstUser assignee on r.assigneeId = assignee.id
 
         WHERE task.id=#{id}
+        <if test="projectId != null">
+            AND task.projectId=#{projectId}
+        </if>
     </select>
 
     <select id="get" resultType="TstTask">
         SELECT task.*  FROM TstTask task
         WHERE task.id=#{id}
+    </select>
+    <select id="listAssigneeIds" resultType="Integer">
+        SELECT r.assigneeId  FROM TstTaskAssigneeRelation r
+        WHERE r.taskId=#{id}
     </select>
 
     <select id="listCaseIds" resultType="int">
@@ -70,7 +77,7 @@
         SET name=#{name},envId=#{envId},
         updateTime=NOW()
 
-        WHERE id=#{id}
+        WHERE id=#{id} AND projectId=#{projectId}
     </update>
     <update id="updateCaseProject">
         UPDATE TstTask SET caseProjectId=#{caseProjectId}, updateTime=NOW()
@@ -78,12 +85,12 @@
     </update>
 
     <delete id="delete">
-        UPDATE TstTask SET deleted=TRUE, userId=#{userId}, updateTime=NOW()
-        WHERE id=#{id}
+        UPDATE TstTask SET deleted=TRUE, updateTime=NOW()
+        WHERE id=#{id} AND projectId=#{projectId}
     </delete>
     <delete id="close">
-        UPDATE TstTask SET status='end', userId=#{userId}, updateTime=NOW()
-        WHERE id=#{id}
+        UPDATE TstTask SET status='end', updateTime=NOW()
+        WHERE id=#{id} AND projectId=#{projectId}
     </delete>
 
     <delete id="removeAssignees">

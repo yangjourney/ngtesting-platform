@@ -1,10 +1,12 @@
 package com.ngtesting.platform.service.impl;
 
+import com.ngtesting.platform.dao.AuthDao;
 import com.ngtesting.platform.dao.OrgDao;
 import com.ngtesting.platform.dao.UserDao;
 import com.ngtesting.platform.model.TstOrg;
 import com.ngtesting.platform.model.TstUser;
-import com.ngtesting.platform.service.*;
+import com.ngtesting.platform.service.OrgPrivilegeService;
+import com.ngtesting.platform.service.OrgService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,25 +16,6 @@ import java.util.Map;
 
 @Service(value = "orgService")
 public class OrgServiceImpl extends BaseServiceImpl implements OrgService {
-
-	@Autowired
-	ProjectRoleService projectRoleService;
-	@Autowired
-	ProjectService projectService;
-    @Autowired
-	OrgRoleService orgRoleService;
-    @Autowired
-    OrgGroupService orgGroupService;
-	@Autowired
-    CaseExeStatusService caseExeStatusService;
-	@Autowired
-    CasePriorityService casePriorityService;
-	@Autowired
-    CaseTypeService caseTypeService;
-	@Autowired
-    ProjectRoleEntityRelationService relationProjectRoleEntityService;
-    @Autowired
-    ProjectPrivilegeService projectPrivilegeService;
 	@Autowired
     OrgPrivilegeService orgRolePrivilegeService;
 
@@ -40,6 +23,8 @@ public class OrgServiceImpl extends BaseServiceImpl implements OrgService {
 	private OrgDao orgDao;
     @Autowired
     private UserDao userDao;
+    @Autowired
+    private AuthDao authDao;
 
 	@Override
 	public List<TstOrg> list(Integer userId, String keywords, Boolean disabled) {
@@ -65,17 +50,14 @@ public class OrgServiceImpl extends BaseServiceImpl implements OrgService {
 
 	@Override
     @Transactional
-	public TstOrg save(TstOrg vo, Integer userId) {
-		boolean isNew = vo.getId() == null;
-		if (isNew) {
+	public TstOrg save(TstOrg vo, TstUser user) {
+		if (vo.getId() == null) {
             vo.setDeleted(false);
             orgDao.save(vo);
+
+			orgDao.initOrg(vo.getId(), user.getId());
 		} else {
             orgDao.update(vo);
-        }
-
-        if (isNew) {
-            orgDao.initOrg(vo.getId(), userId);
         }
 
 		return vo;

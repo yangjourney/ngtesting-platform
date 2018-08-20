@@ -38,8 +38,8 @@ public class OrgGroupServiceImpl extends BaseServiceImpl implements OrgGroupServ
     }
 
     @Override
-    public TstOrgGroup get(Integer id) {
-        TstOrgGroup group = groupDao.get(id);
+    public TstOrgGroup get(Integer id, Integer orgId) {
+        TstOrgGroup group = groupDao.get(id, orgId);
         return group;
     }
 
@@ -50,16 +50,19 @@ public class OrgGroupServiceImpl extends BaseServiceImpl implements OrgGroupServ
 		if (vo.getId() == null) {
 			groupDao.save(vo);
 		} else {
-            groupDao.update(vo);
+            Integer count = groupDao.update(vo);
+            if (count == 0) {
+                return null;
+            }
         }
 
 		return vo;
 	}
 
 	@Override
-	public boolean delete(Integer id) {
-		groupDao.delete(id);
+	public boolean delete(Integer id, Integer orgId) {
+        Integer count = groupDao.delete(id, orgId);
 
-		return true;
+		return count > 0;
 	}
 }

@@ -36,12 +36,14 @@ public class CaseInTaskAction extends BaseAction {
     @ResponseBody
     public Map<String, Object> query(HttpServletRequest request, @RequestBody JSONObject json) {
         Map<String, Object> ret = new HashMap<String, Object>();
+        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 
-        Integer orgId = json.getInteger("orgId");
-        Integer projectId = json.getInteger("projectId");
+        Integer orgId = user.getDefaultOrgId();
+        Integer projectId = user.getDefaultPrjId();
+
         Integer taskId = json.getInteger("taskId");
 
-        List<TstCaseInTask> vos = caseInTaskService.query(taskId);
+        List<TstCaseInTask> vos = caseInTaskService.query(taskId, projectId);
 
         List<TstCaseType> caseTypePos = caseTypeService.list(orgId);
         List<TstCasePriority> casePriorityPos = casePriorityService.list(orgId);
@@ -60,11 +62,12 @@ public class CaseInTaskAction extends BaseAction {
     public Map<String, Object> get(HttpServletRequest request, @RequestBody JSONObject json) {
         Map<String, Object> ret = new HashMap<String, Object>();
 
-        TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
-        Integer orgId = userVo.getDefaultOrgId();
-        Integer caseId = json.getInteger("id");
+        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
+        Integer prjId = user.getDefaultPrjId();
 
-        TstCaseInTask vo = caseInTaskService.getDetail(caseId);
+        Integer id = json.getInteger("id");
+
+        TstCaseInTask vo = caseInTaskService.getDetail(id, prjId);
 
         ret.put("data", vo);
         ret.put("code", Constant.RespCode.SUCCESS.getCode());
@@ -76,11 +79,14 @@ public class CaseInTaskAction extends BaseAction {
     public Map<String, Object> rename(HttpServletRequest request, @RequestBody JSONObject json) {
         Map<String, Object> ret = new HashMap<String, Object>();
 
-        TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
+        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 
-//        TstCaseInTask vo = caseInTaskService.renamePers(json, userVo);
+        TstCaseInTask testCase = caseInTaskService.rename(json, user);
+        if (testCase == null) {
+            return authFail();
+        }
 
-//        ret.put("data", vo);
+        ret.put("data", testCase);
         ret.put("code", Constant.RespCode.SUCCESS.getCode());
         return ret;
     }
@@ -90,17 +96,20 @@ public class CaseInTaskAction extends BaseAction {
     public Map<String, Object> setResult(HttpServletRequest request, @RequestBody JSONObject json) {
         Map<String, Object> ret = new HashMap<String, Object>();
 
-        TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
-        Integer orgId = userVo.getDefaultOrgId();
+        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 
-        Integer caseInRunId = json.getInteger("id");
+        Integer caseInTaskId = json.getInteger("id");
+        Integer caseId = json.getInteger("caseId");
         String result = json.getString("result");
         String status = json.getString("status");
         Integer nextId = json.getInteger("nextId");
 
-        TstCaseInTask vo = caseInTaskService.setResult(caseInRunId, result, status, nextId, userVo);
+        TstCaseInTask testCase = caseInTaskService.setResult(caseInTaskId, caseId, result, status, nextId, user);
+        if (testCase == null) {
+            return authFail();
+        }
 
-        ret.put("data", vo);
+        ret.put("data", testCase);
         ret.put("code", Constant.RespCode.SUCCESS.getCode());
         return ret;
     }

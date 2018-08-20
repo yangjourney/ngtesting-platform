@@ -9,8 +9,8 @@ public interface CaseDao {
     void create(TstCase testCase);
     List<TstCase> query(@Param("projectId") Integer projectId);
 
-    TstCase get(@Param("id") Integer id);
-    TstCase getDetail(@Param("id") Integer id);
+    TstCase get(@Param("id") Integer id, @Param("prjId") Integer prjId);
+    TstCase getDetail(@Param("id") Integer id, @Param("prjId") Integer prjId);
 
     void renameNew(TstCase testCasePo);
     void renameUpdate(TstCase testCasePo);
@@ -18,11 +18,30 @@ public interface CaseDao {
     void moveCopy(TstCase testCase);
     void moveUpdate(TstCase testCase);
 
-    void update(
+    Integer update(
             @Param("obj") TstCase testCasePo,
-            @Param("props") List<String> props);
+            @Param("props") List<String> props,
+            @Param("projectId") Integer projectId);
 
-    void delete(@Param("pId") Integer id);
+    Integer delete(@Param("pId") Integer pId,
+                @Param("projectId") Integer projectId);
+
+
+    Integer changeContentType(@Param("id") Integer id,
+                           @Param("contentType") String contentType,
+                           @Param("projectId") Integer projectId);
+
+    Integer reviewResult(@Param("id") Integer id,
+                      @Param("result") Boolean result,
+                      @Param("projectId") Integer projectId);
+
+    Integer updateProp(@Param("id") Integer id,
+                    @Param("prop") String prop,
+                    @Param("value") String value,
+                    @Param("projectId") Integer projectId);
+
+    void updateParentIfNeeded(@Param("pId") Integer pId);
+    List<TstCase> getChildren(@Param("id") Integer id);
 
     Integer getChildMaxOrderNumb(@Param("pId") Integer pId);
 
@@ -33,18 +52,4 @@ public interface CaseDao {
     void addOrderForNextCases(@Param("srcId") Integer srcId,
                               @Param("targetOrdr") Integer targetOrdr,
                               @Param("targetPid") Integer targetPid);
-
-    void updateProp(@Param("id") Integer id,
-                    @Param("prop") String prop,
-                    @Param("value") String value);
-
-    List<TstCase> getChildren(@Param("id") Integer id);
-
-    void changeContentTypePers(@Param("id") Integer id,
-                               @Param("contentType") String contentType);
-
-    void reviewResult(@Param("id") Integer id,
-                      @Param("result") Boolean result);
-
-    void updateParentIfNeeded(@Param("pId") Integer pId);
 }

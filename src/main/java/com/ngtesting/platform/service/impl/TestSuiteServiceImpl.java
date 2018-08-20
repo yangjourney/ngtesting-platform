@@ -46,8 +46,8 @@ public class TestSuiteServiceImpl extends BaseServiceImpl implements TestSuiteSe
     }
 
     @Override
-    public TstSuite get(Integer id) {
-        TstSuite po = testSuiteDao.get(id);
+    public TstSuite get(Integer id, Integer projectId) {
+        TstSuite po = testSuiteDao.get(id, projectId);
 
         return po;
     }
@@ -59,127 +59,52 @@ public class TestSuiteServiceImpl extends BaseServiceImpl implements TestSuiteSe
     }
 
     @Override
-    public TstSuite save(JSONObject json, TstUser optUser) {
+    public TstSuite save(JSONObject json, TstUser user) {
         TstSuite vo = JSON.parseObject(JSON.toJSONString(json), TstSuite.class);
-        vo.setUserId(optUser.getId());
+        vo.setUserId(user.getId());
+        vo.setProjectId(user.getDefaultPrjId());
 
         Constant.MsgType action;
-        if (vo.getId() != null) {
-            action = Constant.MsgType.update;
-
-            testSuiteDao.update(vo);
-        } else {
+        if (vo.getId() == null) {
             action = Constant.MsgType.create;
 
             testSuiteDao.save(vo);
+        } else {
+            action = Constant.MsgType.update;
+
+            Integer count = testSuiteDao.update(vo);
+            if (count == 0) {
+                return null;
+            }
         }
 
-        historyService.create(vo.getProjectId(), optUser, action.msg, TstHistory.TargetType.suite,
+        historyService.create(vo.getProjectId(), user, action.msg, TstHistory.TargetType.suite,
                 vo.getId(), vo.getName());
 
         return vo;
     }
 
     @Override
-    public void delete(Integer id, Integer userId) {
-        testSuiteDao.get(id);
+    public Boolean delete(Integer id, Integer projectId) {
+        Integer count = testSuiteDao.delete(id, projectId);
+        return count > 0;
     }
 
     @Override
-    public TstSuite saveCases(JSONObject json, TstUser optUser) {
-        Integer projectId = json.getInteger("projectId");
-        Integer caseProjectId = json.getInteger("caseProjectId");
-        Integer suiteId = json.getInteger("suiteId");
-        List<Integer> ids = JSON.parseArray(json.getString("cases"), Integer.class) ;
-
-        return saveCases(projectId, caseProjectId, suiteId, ids, optUser);
-    }
-
-    @Override
-    public TstSuite saveCases(Integer projectId, Integer caseProjectId, Integer suiteId, List<Integer> caseIds, TstUser optUser) {
-        testSuiteDao.updateSuiteProject(suiteId, projectId, caseProjectId, optUser.getId());
+    public TstSuite saveCases(Integer projectId, Integer caseProjectId, Integer suiteId,
+                              List<Integer> caseIds, TstUser user) {
+        testSuiteDao.updateSuiteProject(suiteId, projectId, caseProjectId, user.getId());
 
         String caseIdsStr = StringUtil.join(caseIds.toArray(), ",");
         testSuiteDao.addCases(suiteId, caseIdsStr);
 
-        TstSuite suite = testSuiteDao.get(suiteId);
+        TstSuite suite = testSuiteDao.get(suiteId, projectId);
         Constant.MsgType action = Constant.MsgType.update_case;
-        historyService.create(suite.getProjectId(), optUser, action.msg, TstHistory.TargetType.task,
+        historyService.create(suite.getProjectId(), user, action.msg, TstHistory.TargetType.task,
                 suite.getId(), suite.getName());
 
         return suite;
     }
-
-//    @Override
-//    public List<TstSuite> genVos(List<TstSuite> pos) {
-//        for (TstSuite po : pos) {
-//            genVo(po);
-//        }
-//        return pos;
-//    }
-//
-//    @Override
-//    public TstSuite genVo(TstSuite po) {
-//        return genVo(po, false);
-//    }
-//    @Override
-//    public TstSuite genVo(TstSuite po, Boolean withCases) {
-//        TstSuite vo = new TstSuite();
-//
-//        vo.setId(po.getId());
-//        vo.setName(po.getName());
-//        vo.setEstimate(po.getEstimate());
-//        vo.setDescr(po.getDescr());
-//
-//        vo.setProjectId(po.getProjectId());
-//        TestProject prj1 = (TestProject)getDetail(TestProject.class, po.getProjectId());
-//        vo.setProjectName(prj1.getName());
-//
-//        vo.setCaseProjectId(po.getCaseProjectId());
-//        TestProject prj2 = (TestProject)getDetail(TestProject.class, po.getCaseProjectId());
-//        vo.setCaseProjectName(prj2.getName());
-//
-//        vo.setUserId(po.getUserId());
-//
-//        TestUser user = (TestUser) getDetail(TestUser.class, po.getUserId());
-//        vo.setUserName(user.getName());
-//        vo.setCreateTime(po.getCreateTime());
-//        vo.setUpdateTime(po.getUpdateTime());
-//
-//        int count = 0;
-//        if (withCases) {
-//            for (TstCaseInSuite p : po.getTestCases()) {
-//                TstCaseInSuite v = genCaseVo(p);
-//                vo.getTestCases().add(v);
-//                if (p.getLeaf()) {
-//                    count++;
-//                }
-//            }
-//        } else {
-//            vo.setCount(countCase(vo.getId()).intValue());
-//        }
-//
-//        return vo;
-//    }
-
-//    @Override
-//    public TstCaseInSuite genCaseVo(TstCaseInSuite po) {
-//        TstCaseInSuite vo = new TstCaseInSuite();
-//
-////        TestCase testcase = po.getTestCase();
-////        BeanUtilEx.copyProperties(vo, testcase);
-//
-////        vo.setSteps(new LinkedList<TstCaseStep>());
-////
-////        List<TestCaseStep> steps = testcase.getSteps();
-////        for (TestCaseStep step : steps) {
-////            TstCaseStep stepVo = new TstCaseStep(
-////                    step.getId(), step.getOpt(), step.getExpect(), step.getOrdr(), step.getTestCaseId());
-////
-////            vo.getSteps().add(stepVo);
-////        }
-//        return vo;
-//    }
 
 }
 

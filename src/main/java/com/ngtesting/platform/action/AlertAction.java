@@ -32,9 +32,9 @@ public class AlertAction extends BaseAction {
     public Map<String, Object> markAllRead(HttpServletRequest request, @RequestBody JSONObject json) {
         Map<String, Object> ret = new HashMap<String, Object>();
 
-        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
+        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 
-		alertService.markAllReadPers(json.getString("ids"));
+		alertService.markAllRead(json.getString("ids"), user.getId());
         optFacade.opt(WsConstant.WS_TODO, user);
 
         ret.put("code", Constant.RespCode.SUCCESS.getCode());

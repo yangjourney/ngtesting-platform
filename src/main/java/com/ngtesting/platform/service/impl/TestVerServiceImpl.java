@@ -2,7 +2,6 @@ package com.ngtesting.platform.service.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.ngtesting.platform.config.Constant;
 import com.ngtesting.platform.dao.TestVerDao;
 import com.ngtesting.platform.model.TstUser;
 import com.ngtesting.platform.model.TstVer;
@@ -25,26 +24,19 @@ public class TestVerServiceImpl extends BaseServiceImpl implements TestVerServic
     }
 
     @Override
-    public TstVer getById(Integer id) {
-        TstVer po = verDao.get(id);
+    public TstVer getById(Integer id, Integer projectId) {
+        TstVer po = verDao.get(id, projectId);
         return po;
     }
 
     @Override
-    public TstVer save(JSONObject json, TstUser optUser) {
-        Integer id = json.getInteger("id");
-
-        TstVer po = null;
+    public TstVer save(JSONObject json, TstUser user) {
         TstVer vo = JSON.parseObject(JSON.toJSONString(json), TstVer.class);
+        Integer id = vo.getId();
 
-        Constant.MsgType action;
-        if (id != null) {
-            action = Constant.MsgType.update;
+        vo.setProjectId(user.getDefaultPrjId());
 
-            verDao.update(vo);
-        } else {
-            action = Constant.MsgType.create;
-
+        if (id == null) {
             Integer maxOrder = verDao.getMaxOrdrNumb(vo.getProjectId());
             if (maxOrder == null) {
                 maxOrder = 0;
@@ -52,34 +44,46 @@ public class TestVerServiceImpl extends BaseServiceImpl implements TestVerServic
             vo.setOrdr(maxOrder + 10);
 
             verDao.add(vo);
+        } else {
+            Integer count = verDao.update(vo);
+            if (count == 0) {
+                return null;
+            }
         }
 
         return vo;
     }
 
     @Override
-    public void delete(Integer id, Integer clientId) {
-        verDao.delete(id);
+    public Boolean delete(Integer id, Integer projectId) {
+        Integer count = verDao.delete(id, projectId);
+        if (count == 0) {
+            return false;
+        }
+
+        return true;
     }
 
     @Override
     @Transactional
-    public boolean changeOrder(Integer id, String act, Integer projectId) {
-        TstVer curr = verDao.get(id);
+    public Boolean changeOrder(Integer id, String act, Integer projectId) {
+        TstVer curr = verDao.get(id, projectId);
+        if (curr == null) {
+            return false;
+        }
+
         TstVer neighbor = null;
         if ("up".equals(act)) {
             neighbor = verDao.getPrev(curr.getOrdr(), projectId);
         } else if ("down".equals(act)) {
             neighbor = verDao.getNext(curr.getOrdr(), projectId);
         }
-        if (neighbor == null) {
-            return false;
+        if (neighbor != null) {
+            Integer currOrder = curr.getOrdr();
+            Integer neighborOrder = neighbor.getOrdr();
+            verDao.setOrder(id, neighborOrder, projectId);
+            verDao.setOrder(neighbor.getId(), currOrder, projectId);
         }
-
-        Integer currOrder = curr.getOrdr();
-        Integer neighborOrder = neighbor.getOrdr();
-        verDao.setOrder(id, neighborOrder);
-        verDao.setOrder(neighbor.getId(), currOrder);
 
         return true;
     }

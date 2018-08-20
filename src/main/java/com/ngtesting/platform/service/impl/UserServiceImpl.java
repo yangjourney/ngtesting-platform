@@ -1,5 +1,6 @@
 package com.ngtesting.platform.service.impl;
 
+import com.alibaba.fastjson.JSONObject;
 import com.github.pagehelper.PageHelper;
 import com.ngtesting.platform.config.Constant;
 import com.ngtesting.platform.dao.OrgDao;
@@ -42,7 +43,7 @@ public class UserServiceImpl implements UserService {
     @Autowired
     OrgGroupUserRelationService orgGroupUserRelationService;
     @Autowired
-    OrgRoleUserRelationService orgRoleUserService;
+    OrgPrivilegeService orgPrivilegeService;
 
     @Override
     public List<TstUser> list(Integer orgId, String keywords, Boolean disabled, int pageNum, int pageSize) {
@@ -91,7 +92,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public TstUser invitePers(TstUser user, TstUser vo, List<TstOrgGroupUserRelation> relations) {
+    public TstUser invite(TstUser user, TstUser vo, List<TstOrgGroupUserRelation> relations) {
         Integer orgId = user.getDefaultOrgId();
         Integer prjId = user.getDefaultPrjId();
         String orgName = user.getDefaultOrgName();
@@ -118,7 +119,7 @@ public class UserServiceImpl implements UserService {
 
         if (isNew || orgUserRelationDao.userInOrg(vo.getId(), orgId) == 0) { // 不在组织里
             orgUserRelationDao.addUserToOrg(vo.getId(), orgId);
-            projectService.viewPers(prjId, vo);
+            projectService.view(prjId, vo);
 
             orgGroupUserRelationService.saveRelationsForUser(orgId, vo.getId(), relations);
 
@@ -154,11 +155,29 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void update(TstUser record) {
-        userDao.update(record);
+    @Transactional
+    public TstUser update(TstUser vo) {
+        userDao.update(vo);
+
+        TstUser user = userDao.get(vo.getId());
+        return user;
     }
 
     @Override
+    @Transactional
+    public TstUser modifyProp(JSONObject json) {
+        Integer id = json.getInteger("id");
+        String prop = json.getString("prop");
+        String value = json.getString("value");
+
+        userDao.modifyProp(id, prop, value);
+
+        TstUser user = userDao.get(id);
+        return user;
+    }
+
+    @Override
+    @Transactional
     public void setDefaultOrg(TstUser user, Integer orgId) {
         TstOrg org = orgDao.get(orgId);
         userDao.setDefaultOrg(user.getId(), orgId, org.getName());
@@ -176,6 +195,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public void setDefaultPrj(TstUser user, Integer prjId) {
         if (prjId != null) {
             TstProject prj = projectDao.get(prjId);
@@ -201,10 +221,10 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public TstUser setLeftSizePers(TstUser user, Integer left, String prop) {
-        if ("case".equals(prop)) {
-            user.setLeftSizeCase(left);
-        } else if ("issue".equals(prop)) {
-            user.setLeftSizeIssue(left);
+        if ("design".equals(prop)) {
+            user.setLeftSizeDesign(left);
+        } else if ("exe".equals(prop)) {
+            user.setLeftSizeExe(left);
         }
 
         userDao.setLeftSize(user);

@@ -1,6 +1,7 @@
 package com.ngtesting.platform.service.impl;
 
 import com.alibaba.fastjson.JSON;
+import com.ngtesting.platform.config.Constant;
 import com.ngtesting.platform.config.WsConstant;
 import com.ngtesting.platform.model.TstOrg;
 import com.ngtesting.platform.model.TstProjectAccessHistory;
@@ -11,6 +12,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.socket.TextMessage;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +51,53 @@ public class PushSettingsServiceImpl extends BaseServiceImpl implements PushSett
     }
 
     @Override
+    public void pushOrgSettings(TstUser user, HttpServletRequest request) {
+        Map<String, Object> ret = new HashMap<>();
+        ret.put("code", 1);
+        ret.put("type", WsConstant.WS_ORG_SETTINGS);
+
+        Integer userId = user.getId();
+        Integer orgId = user.getDefaultOrgId();
+
+//        TstOrg org = (TstOrg)getDetail(TstOrg.class, orgId);
+        Map<String, Boolean> orgPrivileges = orgRolePrivilegeService.listByUser(userId, orgId);
+        request.getSession().setAttribute(Constant.HTTP_SESSION_USER_SETTING_ORG_PRIVILEGE, orgPrivileges);
+
+        Map<String,Map<String,String>> casePropertyMap = casePropertyService.getMap(orgId);
+
+//        ret.put("org", org);
+
+        ret.put("orgPrivileges", orgPrivileges);
+
+        ret.put("defaultOrgId", user.getDefaultOrgId());
+        ret.put("defaultOrgName", user.getDefaultOrgName());
+
+        ret.put("defaultPrjId", user.getDefaultPrjId());
+        ret.put("defaultPrjName", user.getDefaultPrjName());
+
+        ret.put("casePropertyMap", casePropertyMap);
+
+        sendMsg(user, ret);
+    }
+
+    @Override
+    public void pushPrjSettings(TstUser user) {
+        Map<String, Object> ret = new HashMap<>();
+        ret.put("code", 1);
+        ret.put("type", WsConstant.WS_PRJ_SETTINGS);
+
+        Integer userId = user.getId();
+        Integer orgId = user.getDefaultOrgId();
+        Integer prjId = user.getDefaultPrjId();
+
+        Map<String, Boolean> prjPrivileges = projectPrivilegeService.listByUser(userId, prjId, orgId);
+        ret.put("prjPrivileges", prjPrivileges);
+        ret.put("prjName", user.getDefaultPrjName());
+
+        sendMsg(user, ret);
+    }
+
+    @Override
     public void pushMyOrgs(TstUser user) {
         Map<String, Object> ret = new HashMap<>();
         ret.put("code", 1);
@@ -60,31 +109,6 @@ public class PushSettingsServiceImpl extends BaseServiceImpl implements PushSett
         ret.put("myOrgs", orgs);
 
         ret.put("defaultOrgId", user.getDefaultOrgId());
-
-        sendMsg(user, ret);
-    }
-
-    @Override
-    public void pushOrgSettings(TstUser user) {
-        Map<String, Object> ret = new HashMap<>();
-        ret.put("code", 1);
-        ret.put("type", WsConstant.WS_ORG_SETTINGS);
-
-        Integer userId = user.getId();
-        Integer orgId = user.getDefaultOrgId();
-
-//        TstOrg org = (TstOrg)getDetail(TstOrg.class, orgId);
-        Map<String, Boolean> orgPrivileges = orgRolePrivilegeService.listByUser(user.getId(), orgId);
-        Map<String,Map<String,String>> casePropertyMap = casePropertyService.getMap(orgId);
-
-//        ret.put("org", org);
-
-        ret.put("defaultOrgId", user.getDefaultOrgId());
-        ret.put("defaultOrgName", user.getDefaultOrgName());
-        ret.put("defaultPrjId", user.getDefaultPrjId());
-        ret.put("defaultPrjName", user.getDefaultPrjName());
-        ret.put("orgPrivileges", orgPrivileges);
-        ret.put("casePropertyMap", casePropertyMap);
 
         sendMsg(user, ret);
     }
@@ -103,23 +127,6 @@ public class PushSettingsServiceImpl extends BaseServiceImpl implements PushSett
 
         ret.put("defaultOrgId", orgId);
         ret.put("defaultPrjId", user.getDefaultPrjId());
-
-        sendMsg(user, ret);
-    }
-
-    @Override
-    public void pushPrjSettings(TstUser user) {
-        Map<String, Object> ret = new HashMap<>();
-        ret.put("code", 1);
-        ret.put("type", WsConstant.WS_PRJ_SETTINGS);
-
-        Integer userId = user.getId();
-        Integer orgId = user.getDefaultOrgId();
-        Integer prjId = user.getDefaultPrjId();
-
-        Map<String, Boolean> prjPrivileges = projectPrivilegeService.listByUser(userId, prjId, orgId);
-        ret.put("prjPrivileges", prjPrivileges);
-        ret.put("prjName", user.getDefaultPrjName());
 
         sendMsg(user, ret);
     }

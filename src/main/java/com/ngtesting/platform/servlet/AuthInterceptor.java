@@ -3,6 +3,8 @@ package com.ngtesting.platform.servlet;
 import com.alibaba.fastjson.JSON;
 import com.ngtesting.platform.config.Constant;
 import com.ngtesting.platform.model.TstUser;
+import com.ngtesting.platform.service.OrgPrivilegeService;
+import com.ngtesting.platform.service.PropService;
 import com.ngtesting.platform.service.UserService;
 import com.ngtesting.platform.utils.AuthPassport;
 import com.ngtesting.platform.utils.WebUtils;
@@ -25,12 +27,16 @@ public class AuthInterceptor implements HandlerInterceptor {
     private Logger logger = LoggerFactory.getLogger(getClass());
 
     @Autowired
+    private PropService propService;
+    @Autowired
     private UserService userService;
+    @Autowired
+    private OrgPrivilegeService orgPrivilegeService;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
 
-        WebUtils.InitWebContext(request);
+        WebUtils.InitWebContext(request, propService.getWorkDir());
 
         if (handler.getClass().isAssignableFrom(HandlerMethod.class)) {
             // 方法上是否有身份验证注解
@@ -41,8 +47,8 @@ public class AuthInterceptor implements HandlerInterceptor {
             }
 
             // 已经登录
-            if (request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY) != null
-                    || request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY) != null) {
+            if (request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE) != null
+                    || request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE) != null) {
                 return true;
             }
 
@@ -61,7 +67,7 @@ public class AuthInterceptor implements HandlerInterceptor {
 
                     TstUser user = userService.getByToken(token.trim());
                     if (user != null) {
-                        request.getSession().setAttribute(Constant.HTTP_SESSION_USER_KEY, user);
+                        request.getSession().setAttribute(Constant.HTTP_SESSION_USER_PROFILE, user);
                         return true;
                     }
                 }

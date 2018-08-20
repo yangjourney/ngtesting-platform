@@ -7,14 +7,12 @@ import java.util.List;
 public interface CaseTypeService extends BaseService {
 	List<TstCaseType> list(Integer orgId);
 
-	TstCaseType get(Integer id);
+	TstCaseType get(Integer id, Integer orgId);
 
 	TstCaseType save(TstCaseType vo, Integer orgId);
-	boolean delete(Integer id);
+	Boolean delete(Integer id, Integer orgId);
 
-	boolean setDefaultPers(Integer orgId, Integer orgId2);
+	Boolean setDefault(Integer orgId, Integer orgId2);
+	Boolean changeOrder(Integer id, String act, Integer orgId);
 
-	boolean changeOrderPers(Integer id, String act, Integer orgId);
-
-//    void createDefaultBasicDataPers(Integer id);
 }

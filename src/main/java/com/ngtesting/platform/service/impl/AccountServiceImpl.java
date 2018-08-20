@@ -12,8 +12,6 @@ import com.ngtesting.platform.service.MailService;
 import com.ngtesting.platform.service.PropService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Isolation;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
@@ -37,7 +35,7 @@ public class AccountServiceImpl implements AccountService {
     @Autowired
     private MailService mailService;
 
-    @Transactional(propagation = Propagation.REQUIRED,isolation = Isolation.DEFAULT,timeout=36000,rollbackFor=Exception.class)
+    @Transactional
     @Override
     public TstUser register(TstUser user) {
         TstUser existUser = userDao.getByEmail(user.getEmail());
@@ -93,6 +91,7 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
+    @Transactional
     public TstUser login(String email, String password, Boolean rememberMe) {
         TstUser user = userDao.getByEmailAndPassword(email, password);
         if (user == null) {
@@ -107,18 +106,21 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
+    @Transactional
     public Boolean logout(String email) {
         Integer matched = accountDao.logout(email);
         return matched > 0;
     }
 
     @Override
+    @Transactional
     public Boolean changePassword(Integer userId, String oldPassword, String password) {
         Integer matched = accountDao.changePassword(userId, oldPassword, password);
         return matched > 0;
     }
 
     @Override
+    @Transactional
     public String forgotPassword(TstUser user) {
         String verifyCode = accountVerifyCodeService.genVerifyCode(user.getId());
 
@@ -140,6 +142,7 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
+    @Transactional
     public Boolean beforResetPassword(String verifyCode) {
         TstUserVerifyCode code = verifyCodeDao.getByCode(verifyCode);
 
