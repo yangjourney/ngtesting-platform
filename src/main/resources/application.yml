@@ -1,15 +1,6 @@
-sys:
-  name: ngtesting
-  url:
-    login: http://localhost:4200/#/login
-    resetPassword: http://localhost:4200/#/reset-password
-  work:
-    dir: /work/ngtesting-data/
-
-server:
-  port: 8080
-
 spring:
+    profiles:
+      active: prod
     resources:
       static-locations: classpath:/META-INF/resources/,classpath:/resources/, classpath:/static/, classpath:/public/, file:${sys.work.dir}
     freemarker:
@@ -23,7 +14,7 @@ spring:
           filters: stat
           driver-class-name: com.mysql.jdbc.Driver
           #基本属性
-          url: jdbc:mysql://127.0.0.1:3306/ngtesting-web?useUnicode=true&characterEncoding=UTF-8&allowMultiQueries=true&useSSL=true
+          url: jdbc:mysql://${config.mysql.host}:${config.mysql.port}/ngtesting-web?useUnicode=true&characterEncoding=UTF-8&allowMultiQueries=true
           username: ngtesting
           password: P2ssw0rd
           #配置初始化大小/最小/最大
@@ -67,3 +58,35 @@ mail:
     encoding: UTF-8
     username: 3193472405@qq.com
     password: dkwmlkquhjbzdgje
+
+sys:
+  name: ngtesting
+  work:
+    dir: /work/ngtesting-data/
+  url:
+    login: http://{0}#/login
+    resetPassword: http://{0}#/reset-password
+
+---
+spring:
+  profiles: dev
+config:
+  mysql:
+    host: localhost
+    port: 3306
+
+---
+spring:
+  profiles: prod
+config:
+  mysql:
+    host: localhost
+    port: 3306
+
+---
+spring:
+  profiles: docker
+config:
+  mysql:
+    host: ngtesting-mysql
+    port: 3306

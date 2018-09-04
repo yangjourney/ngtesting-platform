@@ -21,6 +21,8 @@ public interface UserDao {
     TstUser getByToken(@Param("token") String token);
     TstUser getByPhone(@Param("phone") String phone);
 
+    String getSalt(@Param("id") Integer id);
+
     void save(TstUser record);
     void update(TstUser record);
 
@@ -38,5 +40,7 @@ public interface UserDao {
 
     void setLeftSize(TstUser user);
 
-    List<TstUser> getProjectUsers(@Param("prjId") Integer prjId);
+    List<TstUser> getProjectUsers(@Param("prjId") Integer prjId, @Param("numb") Integer numb);
+
+    void setDefaultOrgPrjToNullForDelete(@Param("orgId") Integer orgId);
 }

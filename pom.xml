@@ -5,7 +5,7 @@
 
     <groupId>com.ngtesting.plaform</groupId>
     <artifactId>ngtesting-web</artifactId>
-    <version>1.0</version>
+    <version>1.0.10</version>
     <packaging>jar</packaging>
 
     <name>ngtesting-web</name>
@@ -183,8 +183,8 @@
             <artifactId>spring-boot-starter-log4j2</artifactId>
         </dependency>
         <dependency>  <!-- 加上这个才能辨认到log4j2.yml文件 -->
-        <groupId>com.fasterxml.jackson.dataformat</groupId>
-        <artifactId>jackson-dataformat-yaml</artifactId>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-yaml</artifactId>
         </dependency>
 
     </dependencies>
@@ -225,6 +225,100 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-jar</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <tasks>
+                                <copy todir="xdoc" overwrite="true" >
+                                    <fileset dir="${project.build.directory}" erroronmissingdir="false">
+                                        <include name="*.jar"/>
+                                    </fileset>
+                                </copy>
+                                <exec executable="chmod">
+                                    <arg value="+x" />
+                                    <arg value="${project.basedir}/xdoc/${project.build.finalName}.jar" />
+                                </exec>
+                            </tasks>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>gen-mysql-image</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <tasks>
+                                <exec executable="docker" dir="${project.basedir}/src/main/docker/mysql">
+                                    <arg value="build" />
+                                    <arg value="-t" />
+                                    <arg value="registry.cn-hangzhou.aliyuncs.com/ngtesting/ngtesting-mysql:${version}" />
+                                    <arg value="." />
+                                </exec>
+                            </tasks>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>push-docker-image</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <tasks>
+                                <exec executable="docker">
+                                    <arg value="push" />
+                                    <arg value="registry.cn-hangzhou.aliyuncs.com/ngtesting/ngtesting-mysql:${version}" />
+                                </exec>
+
+                                <exec executable="docker">
+                                    <arg value="push" />
+                                    <arg value="registry.cn-hangzhou.aliyuncs.com/ngtesting/ngtesting-web:${version}" />
+                                </exec>
+                            </tasks>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>com.spotify</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>0.4.11</version>
+
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <id>build-image</id>
+                        <goals>
+                            <goal>build</goal>
+                        </goals>
+                    </execution>
+                </executions>
+
+                <configuration>
+                    <imageName>registry.cn-hangzhou.aliyuncs.com/ngtesting/ngtesting-web:${version}
+                    </imageName>
+                    <dockerDirectory>src/main/docker</dockerDirectory>
+                    <resources>
+                        <resource>
+                            <targetPath>/</targetPath>
+                            <directory>${project.build.directory}</directory>
+                            <include>${project.build.finalName}.jar</include>
+                        </resource>
+                    </resources>
+                </configuration>
             </plugin>
 
         </plugins>

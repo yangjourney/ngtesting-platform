@@ -112,12 +112,14 @@ public class OrgAction extends BaseAction {
         }
 
         TstOrg org = orgService.save(vo, user);
-
-        List<TstOrg> vos = orgService.list(user.getId(), "false", null);
+        if (user.getDefaultOrgId().intValue() == org.getId().intValue() &&
+                !user.getDefaultOrgName().equals(org.getName())) {
+            user.setDefaultOrgName(org.getName());
+            pushSettingsService.pushOrgSettings(user);
+        }
 
         pushSettingsService.pushMyOrgs(user);
 
-		ret.put("myOrgs", vos);
 		ret.put("code", Constant.RespCode.SUCCESS.getCode());
 		return ret;
 	}
@@ -133,9 +135,15 @@ public class OrgAction extends BaseAction {
             return authFail();
         }
 
-		orgService.delete(orgId);
+		Boolean result = orgService.delete(orgId, user);
+        if (result && orgId.intValue() == user.getDefaultOrgId().intValue()) {
+            userService.setEmptyOrg(user, orgId);
 
-		ret.put("code", Constant.RespCode.SUCCESS.getCode());
+            pushSettingsService.pushMyOrgs(user);
+            pushSettingsService.pushOrgSettings(user);
+            pushSettingsService.pushRecentProjects(user);
+        }
+        ret.put("code", Constant.RespCode.SUCCESS.getCode());
 		return ret;
 	}
 
@@ -152,7 +160,7 @@ public class OrgAction extends BaseAction {
 
 		userService.setDefaultOrg(user, orgId);
 
-		pushSettingsService.pushOrgSettings(user, request);
+		pushSettingsService.pushOrgSettings(user);
 		pushSettingsService.pushRecentProjects(user);
 
 		ret.put("code", Constant.RespCode.SUCCESS.getCode());
@@ -175,7 +183,7 @@ public class OrgAction extends BaseAction {
         }
 
 		userService.setDefaultOrg(user, orgId);
-		pushSettingsService.pushOrgSettings(user, request);
+		pushSettingsService.pushOrgSettings(user);
 		pushSettingsService.pushRecentProjects(user);
 
         List<TstOrg> vos = orgService.list(user.getId(), keywords, disabled);

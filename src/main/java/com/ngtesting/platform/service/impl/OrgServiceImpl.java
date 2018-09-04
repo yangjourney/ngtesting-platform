@@ -64,9 +64,8 @@ public class OrgServiceImpl extends BaseServiceImpl implements OrgService {
 	}
 
 	@Override
-	public Boolean delete(Integer id) {
+	public Boolean delete(Integer id, TstUser user) {
 		Integer count = orgDao.delete(id);
-
 		return count > 0;
 	}
 
@@ -75,7 +74,8 @@ public class OrgServiceImpl extends BaseServiceImpl implements OrgService {
 		TstUser user = userDao.get(userId);
 
 		for (TstOrg po : pos) {
-			if (po.getId().longValue() == user.getDefaultOrgId().longValue()) {
+			if (user.getDefaultOrgId() != null
+                    && user.getDefaultOrgId().longValue() == po.getId().longValue()) {
                 po.setDefaultOrg(true);
 			}
 			Map<String, Boolean> orgPrivileges = orgRolePrivilegeService.listByUser(userId, po.getId());

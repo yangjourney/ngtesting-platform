@@ -9,6 +9,7 @@ import com.ngtesting.platform.dao.ProjectDao;
 import com.ngtesting.platform.dao.UserDao;
 import com.ngtesting.platform.model.*;
 import com.ngtesting.platform.service.*;
+import com.ngtesting.platform.utils.PasswordEncoder;
 import com.ngtesting.platform.utils.StringUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -61,9 +62,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<TstUser> getProjectUsers(Integer orgId, Integer projectId) {
-        List<TstUser> ls = userDao.getProjectUsers(projectId);
+        List<TstUser> ls = userDao.getProjectUsers(projectId, null);
 
         return ls;
+    }
+
+    @Override
+    public void setDefaultOrgPrjToNullForDelete(Integer orgId) {
+        userDao.setDefaultOrgPrjToNullForDelete(orgId);
     }
 
     @Override
@@ -106,13 +112,18 @@ public class UserServiceImpl implements UserService {
         } else {
             isNew = true;
             vo.setDefaultOrgId(orgId);
-            vo.setPassword(StringUtil.RandomString(6));
             vo.setAvatar("upload/sample/user/avatar.png");
 
             vo.setDefaultOrgId(orgId);
             vo.setDefaultPrjId(prjId);
             vo.setDefaultOrgName(orgName);
             vo.setDefaultPrjName(prjName);
+
+            String salt = PasswordEncoder.genSalt();
+            PasswordEncoder passwordEncoder = new  PasswordEncoder(salt);
+
+            user.setTemp(salt);
+            user.setPassword(passwordEncoder.encodePassword(StringUtil.RandomString(6)));
 
             userDao.save(vo);
         }
@@ -190,8 +201,23 @@ public class UserServiceImpl implements UserService {
             setDefaultPrj(user, his.getPrjId());
 
         } else {
-            setDefaultPrj(user, null);
+            List<TstProject> projects = projectDao.getProjectsByOrg(orgId);
+            setDefaultPrj(user, projects.get(0).getId());
         }
+    }
+
+    @Override
+    @Transactional
+    public void setEmptyOrg(TstUser user, Integer orgId) {
+        setDefaultOrgPrjToNullForDelete(orgId);
+
+//        userDao.setDefaultOrg(user.getId(), null, null);
+        user.setDefaultOrgId(null);
+        user.setDefaultOrgName(null);
+
+//        userDao.setDefaultPrj(user.getId(), null, null);
+        user.setDefaultPrjId(null);
+        user.setDefaultPrjName(null);
     }
 
     @Override

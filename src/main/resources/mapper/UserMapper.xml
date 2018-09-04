@@ -29,7 +29,23 @@
     </select>
 
     <select id="getProjectUsers" resultType="TstUser">
-        { call get_project_users(#{prjId,mode=IN,jdbcType=INTEGER}) }
+        select usr.id, usr.nickname from TstUser usr
+        where usr.id in
+        (
+            select relation1.entityId from TstProjectRoleEntityRelation relation1
+                where relation1.type = 'user' AND relation1.projectId = #{prjId}
+            UNION
+            select relta.userId from TstOrgGroupUserRelation relta
+                where relta.orgGroupId in
+                (
+                    select relation2.entityId from TstProjectRoleEntityRelation relation2
+                        where relation2.type = 'group' AND relation2.projectId = #{prjId}
+                )
+        )
+        ORDER by usr.id ASC
+        <if test="numb != null">
+            LIMIT 10
+        </if>
     </select>
 
     <select id="get" parameterType="int" resultType="TstUser">
@@ -56,11 +72,17 @@
         LIMIT 1;
     </select>
 
+    <select id="getSalt" resultType="String">
+        SELECT salt FROM TstUser WHERE id = #{id}
+        AND disabled != TRUE AND deleted != TRUE
+        LIMIT 1;
+    </select>
+
     <insert id="save" parameterType="TstUser" useGeneratedKeys="true" keyProperty="id">
-        insert into TstUser (email,password,nickname,phone,avatar,token,
+        insert into TstUser (email,password,nickname,phone,avatar,token,salt,
           leftSizeDesign,leftSizeExe,defaultOrgId,defaultOrgName,defaultPrjId,defaultPrjName,
           deleted,disabled,createTime)
-        values (#{email},#{password},#{nickname},#{phone},#{avatar},#{token},
+        values (#{email},#{password},#{nickname},#{phone},#{avatar},#{token},#{temp},
           #{leftSizeDesign},#{leftSizeExe},#{defaultOrgId},#{defaultOrgName},#{defaultPrjId},#{defaultPrjName},
           #{deleted},#{disabled},#{createTime})
     </insert>
@@ -86,6 +108,13 @@
         UPDATE TstUser
         SET defaultPrjId=#{prjId}, defaultPrjName=#{prjName}
         WHERE id=#{id}
+    </update>
+
+    <update id="setDefaultOrgPrjToNullForDelete">
+        UPDATE TstUser
+        SET defaultOrgId=NULL, defaultOrgName=NULL,
+            defaultPrjId=NULL, defaultPrjName=NULL
+        WHERE defaultOrgId=#{orgId}
     </update>
 
     <update id="setLeftSize" parameterType="TstUser">
