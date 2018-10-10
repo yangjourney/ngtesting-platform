@@ -112,13 +112,14 @@ public class OrgAction extends BaseAction {
         }
 
         TstOrg org = orgService.save(vo, user);
-        if (user.getDefaultOrgId().intValue() == org.getId().intValue() &&
-                !user.getDefaultOrgName().equals(org.getName())) {
-            user.setDefaultOrgName(org.getName());
+
+        if (user.getDefaultOrgId() == null) { // 首个组织
+            orgService.changeDefaultOrg(user, org.getId());
+        } else if (user.getDefaultOrgId().intValue() == org.getId().intValue() &&
+                !org.getName().equals(user.getDefaultOrgName())) { // 修改当前组织名称
+            user.setDefaultOrgName(vo.getName());
             pushSettingsService.pushOrgSettings(user);
         }
-
-        pushSettingsService.pushMyOrgs(user);
 
 		ret.put("code", Constant.RespCode.SUCCESS.getCode());
 		return ret;
@@ -136,17 +137,12 @@ public class OrgAction extends BaseAction {
         }
 
 		Boolean result = orgService.delete(orgId, user);
-        if (result && orgId.intValue() == user.getDefaultOrgId().intValue()) {
-            userService.setEmptyOrg(user, orgId);
 
-            pushSettingsService.pushMyOrgs(user);
-            pushSettingsService.pushOrgSettings(user);
-            pushSettingsService.pushRecentProjects(user);
-        }
         ret.put("code", Constant.RespCode.SUCCESS.getCode());
 		return ret;
 	}
 
+	// 来源于前端上下文的变化
 	@RequestMapping(value = "change", method = RequestMethod.POST)
 	@ResponseBody
 	public Map<String, Object> change(HttpServletRequest request, @RequestBody JSONObject json) {
@@ -158,16 +154,14 @@ public class OrgAction extends BaseAction {
             return authFail();
         }
 
-		userService.setDefaultOrg(user, orgId);
-
-		pushSettingsService.pushOrgSettings(user);
-		pushSettingsService.pushRecentProjects(user);
+		orgService.changeDefaultOrg(user, orgId); // 涵盖项目设置WS推送消息
 
 		ret.put("code", Constant.RespCode.SUCCESS.getCode());
 
 		return ret;
 	}
 
+    // 用户在列表页，设置默认组织
 	@RequestMapping(value = "setDefault", method = RequestMethod.POST)
 	@ResponseBody
 	public Map<String, Object> setDefault(HttpServletRequest request, @RequestBody JSONObject json) {
@@ -182,9 +176,7 @@ public class OrgAction extends BaseAction {
             return authFail();
         }
 
-		userService.setDefaultOrg(user, orgId);
-		pushSettingsService.pushOrgSettings(user);
-		pushSettingsService.pushRecentProjects(user);
+		orgService.changeDefaultOrg(user, orgId);  // 涵盖项目设置WS推送消息
 
         List<TstOrg> vos = orgService.list(user.getId(), keywords, disabled);
 
