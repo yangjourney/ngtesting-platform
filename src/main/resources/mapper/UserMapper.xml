@@ -50,7 +50,7 @@
 
     <select id="get" parameterType="int" resultType="TstUser">
         SELECT usr.*,
-          s.leftSizeDesign leftSizeDesign, s.leftSizeExe leftSizeExe
+          s.leftSizeDesign leftSizeDesign, s.leftSizeExe leftSizeExe, s.issueView issueView
         FROM TstUser usr
         JOIN TstUserSettings s ON s.userId = usr.id
 
@@ -58,7 +58,8 @@
     </select>
     <select id="getByEmail" parameterType="string" resultType="TstUser">
         SELECT usr.*,
-          s.leftSizeDesign leftSizeDesign, s.leftSizeExe leftSizeExe
+          s.leftSizeDesign leftSizeDesign, s.leftSizeExe leftSizeExe, s.issueView issueView,
+          s.issueColumns issueColumns
 
         FROM TstUser usr
         JOIN TstUserSettings s ON s.userId = usr.id
@@ -74,8 +75,15 @@
     </select>
 
     <select id="getByToken" resultType="TstUser">
-        SELECT * FROM TstUser WHERE token = #{token}
-        AND disabled != TRUE AND deleted != TRUE
+        SELECT usr.*,
+          s.leftSizeDesign leftSizeDesign, s.leftSizeExe leftSizeExe, s.issueView issueView,
+          s.issueColumns issueColumns
+
+        FROM TstUser usr
+        JOIN TstUserSettings s ON s.userId = usr.id
+
+        WHERE usr.token = #{token}
+        AND usr.disabled != TRUE AND usr.deleted != TRUE
         LIMIT 1;
     </select>
     <select id="getByPhone" resultType="TstUser">
@@ -117,8 +125,20 @@
 
     <update id="setLeftSize" parameterType="TstUser">
         UPDATE TstUserSettings
-        SET leftSizeDesign=#{leftSizeDesign}, leftSizeExe=#{leftSizeExe}
+        SET leftSizeDesign=#{leftSizeDesign}, leftSizeExe=#{leftSizeExe}, leftSizeIssue=#{leftSizeIssue},
+          s.issueColumns issueColumns
+
         WHERE userId=#{id}
+    </update>
+    <update id="setIssueView" parameterType="TstUser">
+        UPDATE TstUserSettings
+        SET issueView=#{issueView}
+        WHERE userId=#{id}
+    </update>
+    <update id="saveIssueColumns">
+        UPDATE TstUserSettings
+        SET issueColumns=#{issueColumns}
+        WHERE userId=#{userId}
     </update>
 
     <select id="search" resultType="TstUser">
