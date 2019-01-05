@@ -8,6 +8,9 @@ spring:
       static-locations: classpath:/META-INF/resources/,classpath:/resources/, classpath:/static/, classpath:/public/, file:${sys.work.dir}, file:${sys.work.my-mind-test}
     freemarker:
       template-loader-path: classpath:/mail-template/
+
+    jackson:
+      time-zone: GMT+8
     datasource:
         name: mysql_ngtesting
         type: com.alibaba.druid.pool.DruidDataSource
@@ -17,7 +20,7 @@ spring:
           filters: stat
           driver-class-name: com.mysql.jdbc.Driver
           #基本属性
-          url: jdbc:mysql://${config.mysql.host}:${config.mysql.port}/ngtesting-web?useUnicode=true&characterEncoding=UTF-8&allowMultiQueries=true
+          url: jdbc:mysql://${config.mysql.host}:${config.mysql.port}/ngtesting-web?useUnicode=true&characterEncoding=UTF-8&allowMultiQueries=true&noAccessToProcedureBodies=true
           username: ngtesting
           password: P2ssw0rd
           #配置初始化大小/最小/最大
@@ -38,10 +41,17 @@ spring:
           pool-prepared-statements: false
           max-pool-prepared-statement-per-connection-size: 20
 
+    servlet:
+      multipart:
+        max-file-size: 150MB
+        max-request-size: 150MB
+
 mybatis:
   mapperLocations: classpath:mapper/*.xml
   typeAliasesPackage: com.ngtesting.platform.model
   typeHandlersPackage: com.ngtesting.platform.typehandler
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
 pagehelper:
     helperDialect: mysql
@@ -70,6 +80,9 @@ sys:
   url:
     login: http://{0}#/login
     resetPassword: http://{0}#/reset-password
+
+logging:
+  config: classpath:logback-spring.xml
 
 ---
 spring:

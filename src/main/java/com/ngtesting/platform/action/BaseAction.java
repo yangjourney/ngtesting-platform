@@ -2,7 +2,7 @@ package com.ngtesting.platform.action;
 
 import com.ngtesting.platform.config.Constant;
 import com.ngtesting.platform.dao.AuthDao;
-import com.ngtesting.platform.service.AuthService;
+import com.ngtesting.platform.service.intf.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.HashMap;
@@ -14,17 +14,17 @@ public class BaseAction {
     @Autowired
     AuthDao authDao;
 
-	public Boolean hasNoOrgAdminPriviledge(Integer userId, Integer orgId) {
-		return !authService.hasOrgAdminPrivilege(userId, orgId);
-	}
+//	public Boolean hasNoOrgAdminPriviledge(Integer userId, Integer orgId) {
+//		return !authService.hasOrgAdminPrivilege(userId, orgId);
+//	}
 
-	public Boolean userNotInOrg(Integer userId, Integer orgId) {
-		return authDao.userNotInOrg(userId, orgId);
-	}
-
-	public Boolean userNotInProject(Integer userId, Integer projectId) {
-		return authDao.userNotInProject(userId, projectId);
-	}
+//	public Boolean userNotInOrg(Integer userId, Integer orgId) {
+//		return authDao.userNotInOrg(userId, orgId);
+//	}
+//
+//	public Boolean userNotInProject(Integer userId, Integer projectId) {
+//		return authDao.userNotInProject(userId, projectId);
+//	}
 
 	public Map<String, Object> authFail() {
 		Map<String, Object> ret = new HashMap<String, Object>();

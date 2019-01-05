@@ -11,6 +11,9 @@ public interface ProjectRoleEntityRelationDao {
 
     List<TstProjectRoleEntityRelation> listByProject(@Param("projectId") Integer projectId);
 
+    List<Integer> listIdsByProjectAndUser(@Param("projectId") Integer projectId,
+                                         @Param("userId") Integer userId);
+
     void addRole(@Param("orgId") Integer orgId,
                  @Param("projectId") Integer projectId,
                  @Param("projectRoleId") Integer projectRoleId,
@@ -19,4 +22,8 @@ public interface ProjectRoleEntityRelationDao {
     void changeRole(@Param("projectId") Integer projectId,
                     @Param("projectRoleId") Integer projectRoleId,
                     @Param("entityId") Integer entityId);
+
+    void remove(@Param("projectId") Integer projectId,
+                @Param("type") String type,
+                @Param("entityId") Integer entityId);
 }

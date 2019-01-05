@@ -2,7 +2,7 @@ package com.ngtesting.platform.service.impl;
 
 import com.ngtesting.platform.dao.OrgPrivilegeDao;
 import com.ngtesting.platform.model.TstOrgPrivilegeDefine;
-import com.ngtesting.platform.service.OrgPrivilegeService;
+import com.ngtesting.platform.service.intf.OrgPrivilegeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -24,7 +24,7 @@ public class OrgPrivilegeServiceImpl extends BaseServiceImpl implements OrgPrivi
 
         List<TstOrgPrivilegeDefine> ls = orgPrivilegeDao.listByUser(orgId, userId);
         for (TstOrgPrivilegeDefine priv: ls) {
-            map.put(priv.getCode().toString(), true);
+            map.put(priv.getCode(), true);
         }
 
         return map;

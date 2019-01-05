@@ -27,6 +27,23 @@
         ORDER BY o.type, role.id ASC
     </select>
 
+    <select id="listIdsByProjectAndUser" resultType="Integer">
+      select relation.projectRoleId from TstProjectRoleEntityRelation relation
+          where
+            (
+              (relation.type = 'user' AND relation.entityId = #{userId})
+              or (relation.type = 'group' AND
+                  relation.entityId in (
+                    select grp.id from TstOrgGroup grp
+                      left join TstOrgGroupUserRelation relat on relat.orgGroupId = grp.id
+                      left join TstUser userr on relat.userId = userr.id
+                    where userr.id = #{userId}
+                  )
+              )
+            )
+            and relation.projectId = #{projectId}
+    </select>
+
     <insert id="addRole" useGeneratedKeys="true" keyProperty="id">
         insert into TstProjectRoleEntityRelation (orgId,projectId,projectRoleId,entityId,type
           )
@@ -40,5 +57,10 @@
         SET projectRoleId=#{projectRoleId}
         WHERE projectId=#{projectId} AND entityId=#{entityId}
     </update>
+
+    <delete id="remove">
+        DELETE FROM TstProjectRoleEntityRelation
+        WHERE projectId=#{projectId} AND type=#{type} AND entityId=#{entityId}
+    </delete>
 
 </mapper>

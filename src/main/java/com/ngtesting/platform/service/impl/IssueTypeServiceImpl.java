@@ -3,7 +3,7 @@ package com.ngtesting.platform.service.impl;
 
 import com.ngtesting.platform.dao.IssueTypeDao;
 import com.ngtesting.platform.model.IsuType;
-import com.ngtesting.platform.service.IssueTypeService;
+import com.ngtesting.platform.service.intf.IssueTypeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,13 +30,22 @@ public class IssueTypeServiceImpl extends BaseServiceImpl implements IssueTypeSe
     }
 
     @Override
+    public List<IsuType> listBySolutionId(Integer solutionId, Integer orgId) {
+        return issueTypeDao.listBySolutionId(solutionId, orgId);
+    }
+
+    @Override
+    public List<IsuType> listNotInSolution(Integer solutionId, Integer orgId) {
+        return issueTypeDao.listNotInSolution(solutionId, orgId);
+    }
+
+    @Override
     public IsuType get(Integer id, Integer orgId) {
         return issueTypeDao.get(id, orgId);
     }
 
     @Override
     public IsuType save(IsuType vo, Integer orgId) {
-
         if (vo.getId() == null) {
             Integer maxOrder = issueTypeDao.getMaxOrdrNumb(orgId);
             if (maxOrder == null) {
@@ -59,11 +68,7 @@ public class IssueTypeServiceImpl extends BaseServiceImpl implements IssueTypeSe
     @Override
     public Boolean delete(Integer id, Integer orgId) {
         Integer count = issueTypeDao.delete(id, orgId);
-        if (count == 0) {
-            return false;
-        }
-
-        return true;
+        return count > 0;
     }
 
     @Override
@@ -72,10 +77,7 @@ public class IssueTypeServiceImpl extends BaseServiceImpl implements IssueTypeSe
         issueTypeDao.removeDefault(orgId);
 
         Integer count = issueTypeDao.setDefault(id, orgId);
-        if (count == 0) {
-            return false;
-        }
-        return true;
+        return count > 0;
     }
 
     @Override

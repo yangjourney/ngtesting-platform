@@ -7,7 +7,7 @@ import com.ngtesting.platform.dao.CaseStepDao;
 import com.ngtesting.platform.model.TstCase;
 import com.ngtesting.platform.model.TstCaseStep;
 import com.ngtesting.platform.model.TstUser;
-import com.ngtesting.platform.service.CaseStepService;
+import com.ngtesting.platform.service.intf.CaseStepService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,7 +34,6 @@ public class CaseStepServiceImpl extends BaseServiceImpl implements CaseStepServ
         } else {
             step.setId(null);
             caseStepDao.save(step);
-            caseStepDao.moveOthersDown(step.getCaseId(), step.getId(), step.getOrdr());
         }
 
         return step;

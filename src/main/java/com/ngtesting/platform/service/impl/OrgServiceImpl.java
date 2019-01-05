@@ -6,10 +6,10 @@ import com.ngtesting.platform.dao.ProjectDao;
 import com.ngtesting.platform.dao.UserDao;
 import com.ngtesting.platform.model.TstOrg;
 import com.ngtesting.platform.model.TstUser;
-import com.ngtesting.platform.service.OrgPrivilegeService;
-import com.ngtesting.platform.service.OrgService;
-import com.ngtesting.platform.service.ProjectService;
-import com.ngtesting.platform.service.PushSettingsService;
+import com.ngtesting.platform.service.intf.OrgPrivilegeService;
+import com.ngtesting.platform.service.intf.OrgService;
+import com.ngtesting.platform.service.intf.ProjectService;
+import com.ngtesting.platform.service.intf.PushSettingsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -61,19 +61,25 @@ public class OrgServiceImpl extends BaseServiceImpl implements OrgService {
 	@Override
     @Transactional
 	public TstOrg save(TstOrg vo, TstUser user) {
-		if (vo.getId() == null) {
-            vo.setDeleted(false);
-            orgDao.save(vo);
+        vo.setDeleted(false);
+        orgDao.save(vo);
 
-			orgDao.initOrg(vo.getId(), user.getId());
-		} else {
-            orgDao.update(vo);
-        }
+        orgDao.initOrg(vo.getId(), user.getId());
 
         pushSettingsService.pushMyOrgs(user);
 
 		return vo;
 	}
+
+    @Override
+    @Transactional
+    public TstOrg update(TstOrg vo, TstUser user) {
+	    orgDao.update(vo);
+
+        pushSettingsService.pushMyOrgs(user);
+
+        return vo;
+    }
 
 	@Override
 	public Boolean delete(Integer id, TstUser user) {
@@ -99,6 +105,7 @@ public class OrgServiceImpl extends BaseServiceImpl implements OrgService {
     @Override
     @Transactional
     public void changeDefaultOrg(TstUser user, Integer orgId) {
+	    // 删除时
 	    if (orgId == null) {
             user.setDefaultOrgId(null);
             user.setDefaultOrgName(null);

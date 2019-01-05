@@ -3,7 +3,9 @@ package com.ngtesting.platform.action.client;
 import com.alibaba.fastjson.JSONObject;
 import com.ngtesting.platform.action.BaseAction;
 import com.ngtesting.platform.config.Constant;
-import com.ngtesting.platform.service.IssueCommentsService;
+import com.ngtesting.platform.model.TstUser;
+import com.ngtesting.platform.service.intf.IssueCommentsService;
+import com.ngtesting.platform.servlet.PrivPrj;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,29 +21,39 @@ import java.util.Map;
 @RequestMapping(Constant.API_PATH_CLIENT + "issue_comments/")
 public class IssueCommentsAction extends BaseAction {
     @Autowired
-    IssueCommentsService commentsService;
+    IssueCommentsService issueCommentsService;
 
     @RequestMapping(value = "save", method = RequestMethod.POST)
     @ResponseBody
+    @PrivPrj(perms = {"issue-maintain"})
     public Map<String, Object> save(HttpServletRequest request, @RequestBody JSONObject json) {
         Map<String, Object> ret = new HashMap<String, Object>();
 
-//        TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
-//
-//        TstCaseCommentsVo vo = commentsService.save(json, userVo);
+        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 
-//        ret.put("data", vo);
+        Object vo = issueCommentsService.save(json, user);
+
+        if (vo == null) {
+            return authFail();
+        }
+
+        ret.put("data", vo);
         ret.put("code", Constant.RespCode.SUCCESS.getCode());
         return ret;
     }
 
     @RequestMapping(value = "delete", method = RequestMethod.POST)
     @ResponseBody
+    @PrivPrj(perms = {"issue-maintain"})
     public Map<String, Object> delete(HttpServletRequest request, @RequestBody JSONObject json) {
         Map<String, Object> ret = new HashMap<String, Object>();
 
-//        TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_KEY);
-//        commentsService.delete(json.getInteger("id"), userVo.getCode());
+        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
+        Boolean result = issueCommentsService.delete(json.getInteger("id"), user);
+
+        if (!result) {
+            return authFail();
+        }
 
         ret.put("code", Constant.RespCode.SUCCESS.getCode());
         return ret;

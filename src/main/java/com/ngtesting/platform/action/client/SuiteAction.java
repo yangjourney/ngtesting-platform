@@ -8,7 +8,8 @@ import com.ngtesting.platform.bean.websocket.WsFacade;
 import com.ngtesting.platform.config.Constant;
 import com.ngtesting.platform.model.TstSuite;
 import com.ngtesting.platform.model.TstUser;
-import com.ngtesting.platform.service.TestSuiteService;
+import com.ngtesting.platform.service.intf.TestSuiteService;
+import com.ngtesting.platform.servlet.PrivPrj;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -33,10 +34,11 @@ public class SuiteAction extends BaseAction {
 
 	@RequestMapping(value = "query", method = RequestMethod.POST)
 	@ResponseBody
+	@PrivPrj(perms = {"test_suite-view"})
 	public Map<String, Object> query(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
 		TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
-        Integer projectId = user.getDefaultPrjId();
+        Integer prjId = user.getDefaultPrjId();
 
 		String keywords = json.getString("keywords");
         Boolean disabled = json.getBoolean("disabled");
@@ -44,7 +46,7 @@ public class SuiteAction extends BaseAction {
 		Integer pageSize = json.getInteger("pageSize");
 
 		com.github.pagehelper.Page page = PageHelper.startPage(pageNum, pageSize);
-		List ls = suiteService.listByPage(projectId, keywords,disabled);
+		List ls = suiteService.listByPage(prjId, keywords,disabled);
 
         ret.put("total", page.getTotal());
         ret.put("data", ls);
@@ -54,14 +56,15 @@ public class SuiteAction extends BaseAction {
 
     @RequestMapping(value = "get", method = RequestMethod.POST)
     @ResponseBody
+	@PrivPrj(perms = {"test_suite-view"})
     public Map<String, Object> get(HttpServletRequest request, @RequestBody JSONObject json) {
         Map<String, Object> ret = new HashMap<String, Object>();
 		TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
-        Integer projectId = user.getDefaultPrjId();
+        Integer prjId = user.getDefaultPrjId();
 
         Integer id = json.getInteger("id");
 
-		TstSuite vo = suiteService.get(id, projectId);
+		TstSuite vo = suiteService.get(id, prjId);
 
         ret.put("data", vo);
         ret.put("code", Constant.RespCode.SUCCESS.getCode());
@@ -70,6 +73,7 @@ public class SuiteAction extends BaseAction {
 
 	@RequestMapping(value = "save", method = RequestMethod.POST)
 	@ResponseBody
+	@PrivPrj(perms = {"test_suite-maintain"})
 	public Map<String, Object> save(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
 		TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
@@ -86,24 +90,22 @@ public class SuiteAction extends BaseAction {
 
     @RequestMapping(value = "saveCases", method = RequestMethod.POST)
     @ResponseBody
+	@PrivPrj(perms = {"test_suite-maintain"})
     public Map<String, Object> saveCases(HttpServletRequest request, @RequestBody JSONObject json) {
         Map<String, Object> ret = new HashMap<String, Object>();
 		TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
+        Integer prjId = user.getDefaultPrjId();
 
-        Integer projectId = json.getInteger("projectId");
         Integer caseProjectId = json.getInteger("caseProjectId");
         Integer suiteId = json.getInteger("suiteId");
         List<Integer> ids = JSON.parseArray(json.getString("cases"), Integer.class);
 
-        if (userNotInProject(user.getId(), projectId) || userNotInProject(user.getId(), caseProjectId)) {
-            return authFail();
-        }
-        TstSuite suite = suiteService.get(suiteId, projectId);
+        TstSuite suite = suiteService.get(suiteId, prjId);
         if (suite == null) { // suite和project不匹配
             return authFail();
         }
 
-        TstSuite po = suiteService.saveCases(projectId, caseProjectId, suiteId, ids, user);
+        TstSuite po = suiteService.saveCases(prjId, caseProjectId, suiteId, ids, user);
 
         ret.put("data", po);
         ret.put("code", Constant.RespCode.SUCCESS.getCode());
@@ -112,14 +114,15 @@ public class SuiteAction extends BaseAction {
 
 	@RequestMapping(value = "delete", method = RequestMethod.POST)
 	@ResponseBody
+	@PrivPrj(perms = {"test_suite-delete"})
 	public Map<String, Object> delete(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
 		TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
-		Integer projectId = user.getDefaultPrjId();
+		Integer prjId = user.getDefaultPrjId();
 
 		Integer id = json.getInteger("id");
 
-		Boolean result = suiteService.delete(id, projectId);
+		Boolean result = suiteService.delete(id, prjId);
         if (!result) {
             return authFail();
         }

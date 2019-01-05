@@ -7,6 +7,29 @@
         WHERE o.orgId=#{orgId}
 
         AND o.disabled!=TRUE AND o.deleted!=TRUE
+        ORDER BY o.ordr ASC
+    </select>
+    <select id="listBySolutionId" resultType="IsuType" parameterType="Map">
+        SELECT * FROM IsuType o
+        JOIN IsuTypeSolutionItem r ON r.typeId = o.id
+        WHERE r.solutionId = #{solutionId}
+          AND o.orgId=#{orgId}
+
+        AND o.disabled!=TRUE AND o.deleted!=TRUE
+        ORDER BY o.ordr ASC
+    </select>
+
+    <select id="listNotInSolution" resultType="IsuType" parameterType="Map">
+        SELECT * FROM IsuType o
+
+        WHERE o.orgId=#{orgId}
+         AND o.id NOT IN (
+          SELECT tmp.id FROM IsuType tmp
+          JOIN IsuTypeSolutionItem r ON r.typeId = tmp.id
+          WHERE r.solutionId = #{solutionId} AND tmp.orgId=#{orgId}
+        )
+
+        AND o.disabled!=TRUE AND o.deleted!=TRUE
         ORDER BY ordr ASC
     </select>
 
@@ -21,14 +44,14 @@
 
     <insert id="save" parameterType="IsuType" useGeneratedKeys="true" keyProperty="id">
         insert into IsuType
-        (label,value,descr,orgId,ordr,isDefault,deleted,disabled,createTime)
+        (label,value,descr,orgId,ordr, defaultVal, buildIn,deleted,disabled,createTime)
         values
-        (#{label},#{value},#{descr},#{orgId},#{ordr},#{isDefault},FALSE,FALSE,NOW())
+        (#{label},#{value},#{descr},#{orgId},#{ordr}, #{defaultVal}, #{buildIn},FALSE,FALSE,NOW())
     </insert>
 
     <update id="update" parameterType="IsuType">
         UPDATE IsuType
-        SET label=#{label},value=#{value},descr=#{descr},
+        SET label=#{label}, value=#{value}, descr=#{descr},
         disabled=#{disabled},
         updateTime=NOW()
 
@@ -43,12 +66,12 @@
 
     <update id="removeDefault">
         UPDATE IsuType
-        SET isDefault=FALSE, updateTime=NOW()
+        SET defaultVal=FALSE, updateTime=NOW()
         WHERE orgId=#{orgId}
     </update>
     <update id="setDefault">
         UPDATE IsuType
-        SET isDefault=TRUE, updateTime=NOW()
+        SET defaultVal=TRUE, updateTime=NOW()
         WHERE id=#{id} AND orgId=#{orgId}
     </update>
 

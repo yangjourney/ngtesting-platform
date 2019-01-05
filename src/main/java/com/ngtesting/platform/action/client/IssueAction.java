@@ -3,8 +3,11 @@ package com.ngtesting.platform.action.client;
 import com.alibaba.fastjson.JSONObject;
 import com.ngtesting.platform.action.BaseAction;
 import com.ngtesting.platform.config.Constant;
-import com.ngtesting.platform.model.*;
-import com.ngtesting.platform.service.*;
+import com.ngtesting.platform.model.IsuIssue;
+import com.ngtesting.platform.model.IsuPage;
+import com.ngtesting.platform.model.TstUser;
+import com.ngtesting.platform.service.intf.*;
+import com.ngtesting.platform.servlet.PrivPrj;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -14,7 +17,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 
@@ -22,164 +24,178 @@ import java.util.Map;
 @RequestMapping(Constant.API_PATH_CLIENT + "issue/")
 public class IssueAction extends BaseAction {
 	@Autowired
-    ProjectService projectService;
-	@Autowired
     IssueService issueService;
-
     @Autowired
-    IssueTypeService typeService;
-    @Autowired
-    IssuePriorityService priorityService;
-    @Autowired
-    IssueStatusService statusService;
-    @Autowired
-    IssueResolutionService resolutionService;
+    IssueFieldService fieldService;
 	@Autowired
-    IssueCustomFieldService customFieldService;
+	IssueDynamicFormService dynamicFormService;
+    @Autowired
+    IssueMiscService issueMiscService;
 
-    @RequestMapping(value = "get", method = RequestMethod.POST)
+    @Autowired
+    IssueLinkService issueLinkService;
+    @Autowired
+    IssueTagService issueTagService;
+    @Autowired
+    IssueWatchService issueWatchService;
+
+    @PrivPrj(perms = {"issue-view"})
+    @RequestMapping(value = "view", method = RequestMethod.POST)
     @ResponseBody
-    public Map<String, Object> get(HttpServletRequest request, @RequestBody JSONObject json) {
+    public Map<String, Object> view(HttpServletRequest request, @RequestBody JSONObject json) {
         Map<String, Object> ret = new HashMap<String, Object>();
 
-        TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
-        Integer orgId = userVo.getDefaultOrgId();
-        Integer prjId = userVo.getDefaultPrjId();
-        Integer caseId = json.getInteger("id");
+        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
+        Integer orgId = user.getDefaultOrgId();
+        Integer prjId = user.getDefaultPrjId();
 
-		IsuIssue vo = issueService.getById(caseId);
+        Integer id = json.getInteger("id");
+        IsuIssue po = issueService.getDetail(id, user.getId(), prjId);
 
-		List<IsuType> types = typeService.list(orgId, prjId);
-		List<IsuPriority> priorities = priorityService.list(orgId, prjId);
-		List<IsuStatus> statuses = statusService.list(orgId, prjId);
-        List<IsuResolution> resolutions = resolutionService.list(orgId, prjId);
-        List<IsuCustomField> fields = customFieldService.list(orgId, prjId);
+        if (po == null) { // 当对象不是默认org的，此处为空
+            return authFail();
+        }
 
-        ret.put("data", vo);
-        ret.put("types", types);
-        ret.put("priorities", priorities);
-        ret.put("statuses", statuses);
-        ret.put("resolutions", resolutions);
-        ret.put("fields", fields);
+        IsuPage page = issueService.getPage(orgId, prjId, "view");
+
+        ret.put("data", po);
+        ret.put("page", page);
+
         ret.put("code", Constant.RespCode.SUCCESS.getCode());
         return ret;
     }
 
+    @PrivPrj(perms = {"issue-view"})
+    @RequestMapping(value = "getData", method = RequestMethod.POST)
+    @ResponseBody
+    public Map<String, Object> getData(HttpServletRequest request, @RequestBody JSONObject json) {
+        Map<String, Object> ret = new HashMap<String, Object>();
 
+        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
+        Integer prjId = user.getDefaultPrjId();
+
+        Integer id = json.getInteger("id");
+        IsuIssue po = issueService.getData(id, user.getId(), prjId);
+
+        ret.put("data", po);
+        ret.put("code", Constant.RespCode.SUCCESS.getCode());
+        return ret;
+    }
+
+    @RequestMapping(value = "create", method = RequestMethod.POST)
+    @ResponseBody
+    @PrivPrj(perms = {"issue-maintain"})
+    public Map<String, Object> create(HttpServletRequest request, @RequestBody JSONObject json) {
+        Map<String, Object> ret = new HashMap<String, Object>();
+
+        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
+        Integer orgId = user.getDefaultOrgId();
+        Integer prjId = user.getDefaultPrjId();
+
+		IsuIssue po = new IsuIssue();
+
+        IsuPage page = issueService.getPage(orgId, prjId, "create");
+
+//        Map issuePropMap = dynamicFormService.genIssuePropMap(orgId, prjId);
+
+        ret.put("data", po);
+        ret.put("page", page);
+//        ret.put("issuePropMap", issuePropMap);
+        ret.put("code", Constant.RespCode.SUCCESS.getCode());
+        return ret;
+    }
+
+    @PrivPrj(perms = {"issue-maintain"})
+    @RequestMapping(value = "edit", method = RequestMethod.POST)
+    @ResponseBody
+    public Map<String, Object> edit(HttpServletRequest request, @RequestBody JSONObject json) {
+        Map<String, Object> ret = new HashMap<String, Object>();
+
+        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
+        Integer orgId = user.getDefaultOrgId();
+        Integer prjId = user.getDefaultPrjId();
+
+        Integer id = json.getInteger("id");
+        IsuIssue po = issueService.get(id, user.getId(), prjId);
+
+        if (po == null) { // 当对象不是默认org的，此处为空
+            return authFail();
+        }
+
+        IsuPage page = issueService.getPage(orgId, prjId, "edit");
+
+//        Map issuePropMap = dynamicFormService.genIssuePropMap(orgId, prjId);
+
+        ret.put("data", po);
+        ret.put("page", page);
+//        ret.put("issuePropMap", issuePropMap);
+        ret.put("code", Constant.RespCode.SUCCESS.getCode());
+        return ret;
+    }
+
+    @PrivPrj(perms = {"issue-maintain"})
 	@RequestMapping(value = "save", method = RequestMethod.POST)
 	@ResponseBody
 	public Map<String, Object> save(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
 
-        TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
-//
-//		IsuIssue po = issueService.save(json, userVo);
-//		TstCase caseVo = issueService.genVo(po, true);
-//
-//		ret.put("data", caseVo);
+        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
+
+        Integer pageId = json.getInteger("pageId");
+        JSONObject issue = json.getJSONObject("issue");
+
+        IsuIssue po = issueService.save(issue, pageId, user);
+
+		ret.put("id", po.getId());
 		ret.put("code", Constant.RespCode.SUCCESS.getCode());
 		return ret;
 	}
 
+    @PrivPrj(perms = {"issue-maintain"})
+    @RequestMapping(value = "update", method = RequestMethod.POST)
+    @ResponseBody
+    public Map<String, Object> update(HttpServletRequest request, @RequestBody JSONObject json) {
+        Map<String, Object> ret = new HashMap<String, Object>();
 
-	@RequestMapping(value = "rename", method = RequestMethod.POST)
-	@ResponseBody
-	public Map<String, Object> rename(HttpServletRequest request, @RequestBody JSONObject json) {
-		Map<String, Object> ret = new HashMap<String, Object>();
+        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 
-		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
+        Integer pageId = json.getInteger("pageId");
+        JSONObject issue = json.getJSONObject("issue");
 
-//		TstCase testCasePo = issueService.rename(json, userVo);
-//        issueService.updateParentIfNeededPers(testCasePo.getpId());
-//		TstCaseVo caseVo = issueService.genVo(testCasePo);
-//
-//		ret.put("data", caseVo);
-		ret.put("code", Constant.RespCode.SUCCESS.getCode());
-		return ret;
-	}
+        issueService.update(issue, pageId, user);
 
+        ret.put("id", issue.getInteger("id"));
+        ret.put("code", Constant.RespCode.SUCCESS.getCode());
+        return ret;
+    }
 
+    @PrivPrj(perms = {"issue-maintain"})
 	@RequestMapping(value = "delete", method = RequestMethod.POST)
+    @ResponseBody
+    public Map<String, Object> delete(HttpServletRequest request, @RequestBody JSONObject json) {
+        Map<String, Object> ret = new HashMap<String, Object>();
+
+        Integer id = json.getInteger("id");
+
+        TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
+
+        issueService.delete(id, user);
+
+        ret.put("code", Constant.RespCode.SUCCESS.getCode());
+        return ret;
+    }
+
+    @PrivPrj(perms = {"issue-maintain"})
+	@RequestMapping(value = "updateField", method = RequestMethod.POST)
 	@ResponseBody
-	public Map<String, Object> delete(HttpServletRequest request, @RequestBody JSONObject json) {
+	public Map<String, Object> updateField(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
 
-		Integer id = json.getInteger("id");
+		TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 
-		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
+		IsuIssue po = issueService.updateField(json, user);
 
-//		TstCase testCase = issueService.delete(id, userVo);
-//		issueService.updateParentIfNeededPers(testCase.getpId());
-
-		ret.put("code", Constant.RespCode.SUCCESS.getCode());
-		return ret;
-	}
-
-
-	@RequestMapping(value = "move", method = RequestMethod.POST)
-	@ResponseBody
-	public Map<String, Object> move(HttpServletRequest request, @RequestBody JSONObject json) {
-		Map<String, Object> ret = new HashMap<String, Object>();
-
-		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
-
-        Integer srcId = json.getInteger("srcId");
-//        Integer parentId = issueService.getWithCasesById(srcId).getpId();
-//        Integer targetId = json.getInteger("targetId");
-//        TstCaseVo vo = issueService.move(json, userVo);
-//
-//        issueService.updateParentIfNeededPers(parentId);
-//        issueService.updateParentIfNeededPers(targetId);
-
-//		ret.put("data", vo);
-		ret.put("code", Constant.RespCode.SUCCESS.getCode());
-		return ret;
-	}
-
-
-	@RequestMapping(value = "saveField", method = RequestMethod.POST)
-	@ResponseBody
-	public Map<String, Object> saveField(HttpServletRequest request, @RequestBody JSONObject json) {
-		Map<String, Object> ret = new HashMap<String, Object>();
-
-		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
-
-//		TstCase po = issueService.saveField(json, userVo);
-//        TstCaseVo caseVo = issueService.genVo(po);
-//
-//		ret.put("data", caseVo);
-		ret.put("code", Constant.RespCode.SUCCESS.getCode());
-		return ret;
-	}
-
-
-	@RequestMapping(value = "changeContentType", method = RequestMethod.POST)
-	@ResponseBody
-	public Map<String, Object> changeContentType(HttpServletRequest request, @RequestBody JSONObject json) {
-		Map<String, Object> ret = new HashMap<String, Object>();
-
-		Integer id = json.getInteger("id");
-        String contentType = json.getString("contentType");
-
-//		TstCase po = issueService.changeContentType(id, contentType);
-
-		ret.put("code", Constant.RespCode.SUCCESS.getCode());
-		return ret;
-	}
-
-
-	@RequestMapping(value = "reviewPass", method = RequestMethod.POST)
-	@ResponseBody
-	public Map<String, Object> reviewPass(HttpServletRequest request, @RequestBody JSONObject json) {
-		Map<String, Object> ret = new HashMap<String, Object>();
-
-		Integer id = json.getInteger("id");
-		Boolean pass = json.getBoolean("pass");
-
-//		TstCase po = issueService.reviewResult(id, pass);
-//        TstCaseVo caseVo = issueService.genVo(po);
-//
-//        ret.put("reviewResult", caseVo);
+        ret.put("data", po);
 		ret.put("code", Constant.RespCode.SUCCESS.getCode());
 		return ret;
 	}

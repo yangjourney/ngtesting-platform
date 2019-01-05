@@ -2,7 +2,7 @@ package com.ngtesting.platform.service.impl;
 
 import com.ngtesting.platform.dao.IssueStatusDao;
 import com.ngtesting.platform.model.IsuStatus;
-import com.ngtesting.platform.service.IssueStatusService;
+import com.ngtesting.platform.service.intf.IssueStatusService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,13 +16,6 @@ public class IssueStatusServiceImpl extends BaseServiceImpl implements IssueStat
 
     @Override
     public List<IsuStatus> list(Integer orgId) {
-        List<IsuStatus> ls = issueStatusDao.list(orgId);
-
-        return ls;
-    }
-
-    @Override
-    public List<IsuStatus> list(Integer orgId, Integer prjId) {
         List<IsuStatus> ls = issueStatusDao.list(orgId);
 
         return ls;
@@ -58,11 +51,7 @@ public class IssueStatusServiceImpl extends BaseServiceImpl implements IssueStat
     @Override
     public Boolean delete(Integer id, Integer orgId) {
         Integer count = issueStatusDao.delete(id, orgId);
-        if (count == 0) {
-            return false;
-        }
-
-        return true;
+        return count > 0;
     }
 
     @Override
@@ -71,10 +60,7 @@ public class IssueStatusServiceImpl extends BaseServiceImpl implements IssueStat
         issueStatusDao.removeDefault(orgId);
 
         Integer count = issueStatusDao.setDefault(id, orgId);
-        if (count == 0) {
-            return false;
-        }
-        return true;
+        return count > 0;
     }
 
     @Override

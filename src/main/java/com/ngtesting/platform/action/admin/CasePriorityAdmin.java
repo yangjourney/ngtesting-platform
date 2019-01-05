@@ -5,8 +5,8 @@ import com.ngtesting.platform.action.BaseAction;
 import com.ngtesting.platform.config.Constant;
 import com.ngtesting.platform.model.TstCasePriority;
 import com.ngtesting.platform.model.TstUser;
-import com.ngtesting.platform.service.CasePriorityService;
-import com.ngtesting.platform.service.CasePropertyService;
+import com.ngtesting.platform.service.intf.CasePriorityService;
+import com.ngtesting.platform.service.intf.CasePropertyService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -88,9 +88,6 @@ public class CasePriorityAdmin extends BaseAction {
 			return authFail();
 		}
 
-		Map<String,Map<String,String>> casePropertyMap = casePropertyService.getMap(orgId);
-		ret.put("casePropertyMap", casePropertyMap);
-
         ret.put("data", po);
 		ret.put("code", Constant.RespCode.SUCCESS.getCode());
 		return ret;
@@ -120,8 +117,8 @@ public class CasePriorityAdmin extends BaseAction {
 	public Map<String, Object> setDefault(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
 
-		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
-		Integer orgId = userVo.getDefaultOrgId();
+		TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
+		Integer orgId = user.getDefaultOrgId();
 		Integer id = json.getInteger("id");
 
 		Boolean result = casePriorityService.setDefault(id, orgId);
@@ -142,8 +139,8 @@ public class CasePriorityAdmin extends BaseAction {
 	public Map<String, Object> changeOrder(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
 
-		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
-		Integer orgId = userVo.getDefaultOrgId();
+		TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
+		Integer orgId = user.getDefaultOrgId();
 		Integer id = json.getInteger("id");
 		String act = json.getString("act");
 

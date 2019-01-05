@@ -5,7 +5,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.ngtesting.platform.dao.TestVerDao;
 import com.ngtesting.platform.model.TstUser;
 import com.ngtesting.platform.model.TstVer;
-import com.ngtesting.platform.service.TestVerService;
+import com.ngtesting.platform.service.intf.TestVerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,9 +34,10 @@ public class TestVerServiceImpl extends BaseServiceImpl implements TestVerServic
         TstVer vo = JSON.parseObject(JSON.toJSONString(json), TstVer.class);
         Integer id = vo.getId();
 
-        vo.setProjectId(user.getDefaultPrjId());
-
         if (id == null) {
+            vo.setProjectId(user.getDefaultPrjId());
+            vo.setOrgId(user.getDefaultOrgId());
+
             Integer maxOrder = verDao.getMaxOrdrNumb(vo.getProjectId());
             if (maxOrder == null) {
                 maxOrder = 0;

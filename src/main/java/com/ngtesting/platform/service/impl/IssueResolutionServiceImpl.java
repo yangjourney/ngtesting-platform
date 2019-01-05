@@ -3,7 +3,7 @@ package com.ngtesting.platform.service.impl;
 
 import com.ngtesting.platform.dao.IssueResolutionDao;
 import com.ngtesting.platform.model.IsuResolution;
-import com.ngtesting.platform.service.IssueResolutionService;
+import com.ngtesting.platform.service.intf.IssueResolutionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +36,7 @@ public class IssueResolutionServiceImpl extends BaseServiceImpl implements Issue
 
     @Override
     public IsuResolution save(IsuResolution vo, Integer orgId) {
+        vo.setOrgId(orgId);
 
         if (vo.getId() == null) {
             Integer maxOrder = issueResolutionDao.getMaxOrdrNumb(orgId);
@@ -43,8 +44,6 @@ public class IssueResolutionServiceImpl extends BaseServiceImpl implements Issue
                 maxOrder = 0;
             }
             vo.setOrdr(maxOrder + 10);
-
-            vo.setOrgId(orgId);
             issueResolutionDao.save(vo);
         } else {
             Integer count = issueResolutionDao.update(vo);
@@ -59,11 +58,7 @@ public class IssueResolutionServiceImpl extends BaseServiceImpl implements Issue
     @Override
     public Boolean delete(Integer id, Integer orgId) {
         Integer count = issueResolutionDao.delete(id, orgId);
-        if (count == 0) {
-            return false;
-        }
-
-        return true;
+        return count > 0;
     }
 
     @Override
@@ -72,10 +67,7 @@ public class IssueResolutionServiceImpl extends BaseServiceImpl implements Issue
         issueResolutionDao.removeDefault(orgId);
 
         Integer count = issueResolutionDao.setDefault(id, orgId);
-        if (count == 0) {
-            return false;
-        }
-        return true;
+        return count > 0;
     }
 
     @Override

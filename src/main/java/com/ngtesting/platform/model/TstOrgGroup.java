@@ -7,6 +7,7 @@ public class TstOrgGroup extends BaseModel {
     private String descr;
 
     private Integer orgId;
+	private Boolean buildIn = false;
 
     private Boolean selecting;
     private Boolean selected;
@@ -61,4 +62,11 @@ public class TstOrgGroup extends BaseModel {
 		this.selecting = selecting;
 	}
 
+	public Boolean getBuildIn() {
+		return buildIn;
+	}
+
+	public void setBuildIn(Boolean buildIn) {
+    this.buildIn = buildIn;
+	}
 }

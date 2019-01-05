@@ -7,9 +7,13 @@ public class TstCase extends BaseModel {
 	private static final long serialVersionUID = -5955583523485410239L;
 
 	private String name;
-	private String priority = "medium";
+
+	private Integer typeId;
+    private String typeName;
+	private Integer priorityId;
+    private String priorityName;
+
 	private Integer estimate = 10;
-    private String type = "functional";
 	private String objective;
     private String descr;
     private Boolean isLeaf;
@@ -50,6 +54,8 @@ public class TstCase extends BaseModel {
 	private String prop18;
 	private String prop19;
 	private String prop20;
+
+	private Integer level;
 
     public static enum CaseContentType {
         steps("steps"),
@@ -188,14 +194,6 @@ public class TstCase extends BaseModel {
     public void setOrdr(Integer ordr) {
         this.ordr = ordr;
     }
-
-	public String getType() {
-		return type;
-	}
-
-	public void setType(String type) {
-		this.type = type;
-	}
 
 	public String getName() {
 		return name;
@@ -373,12 +371,17 @@ public class TstCase extends BaseModel {
 		this.prop20 = prop20;
 	}
 
-	public String getPriority() {
-		return priority;
+	public Integer getTypeId() {
+		return typeId;
 	}
-
-	public void setPriority(String priority) {
-		this.priority = priority;
+	public void setTypeId(Integer typeId) {
+		this.typeId = typeId;
+	}
+	public Integer getPriorityId() {
+		return priorityId;
+	}
+	public void setPriorityId(Integer priorityId) {
+		this.priorityId = priorityId;
 	}
 
 	public Integer getEstimate() {
@@ -405,14 +408,6 @@ public class TstCase extends BaseModel {
 		this.objective = objective;
 	}
 
-//    public List<TestCasePropVo> getProps() {
-//        return props;
-//    }
-//
-//    public void setProps(List<TestCasePropVo> props) {
-//        this.props = props;
-//    }
-
 	public List<TstCaseStep> getSteps() {
 		return steps;
 	}
@@ -420,4 +415,28 @@ public class TstCase extends BaseModel {
 	public void setSteps(List<TstCaseStep> steps) {
 		this.steps = steps;
 	}
+
+	public Integer getLevel() {
+		return level;
+	}
+
+	public void setLevel(Integer level) {
+		this.level = level;
+	}
+
+    public String getTypeName() {
+        return typeName;
+    }
+
+    public void setTypeName(String typeName) {
+        this.typeName = typeName;
+    }
+
+    public String getPriorityName() {
+        return priorityName;
+    }
+
+    public void setPriorityName(String priorityName) {
+        this.priorityName = priorityName;
+    }
 }

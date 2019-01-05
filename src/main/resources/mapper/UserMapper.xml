@@ -70,9 +70,9 @@
         LIMIT 1;
     </select>
 
-    <select id="getByEmailAndPassword" resultType="TstUser">
-        SELECT * FROM TstUser WHERE email = #{email} AND password=#{password} LIMIT 1;
-    </select>
+    <!--<select id="getByEmailAndPassword" resultType="TstUser">-->
+        <!--SELECT * FROM TstUser WHERE email = #{email} AND password=#{password} LIMIT 1;-->
+    <!--</select>-->
 
     <select id="getByToken" resultType="TstUser">
         SELECT usr.*,
@@ -125,8 +125,7 @@
 
     <update id="setLeftSize" parameterType="TstUser">
         UPDATE TstUserSettings
-        SET leftSizeDesign=#{leftSizeDesign}, leftSizeExe=#{leftSizeExe}, leftSizeIssue=#{leftSizeIssue},
-          s.issueColumns issueColumns
+        SET leftSizeDesign=#{leftSizeDesign}, leftSizeExe=#{leftSizeExe}, leftSizeIssue=#{leftSizeIssue}
 
         WHERE userId=#{id}
     </update>
@@ -140,12 +139,27 @@
         SET issueColumns=#{issueColumns}
         WHERE userId=#{userId}
     </update>
+    <update id="saveIssueFields">
+        UPDATE TstUserSettings
+        SET issueFields=#{issueFields}
+        WHERE userId=#{userId}
+    </update>
 
     <select id="search" resultType="TstUser">
         SELECT * FROM TstUser usr
-        JOIN TstOrgUserRelation r ON r.orgId = #{orgId} AND r.userId = usr.id
 
-        WHERE TRUE
+        WHERE usr.id in
+        (
+            select relation1.entityId from TstProjectRoleEntityRelation relation1
+              where relation1.type = 'user' AND relation1.projectId = #{projectId}
+            UNION
+            select relta.userId from TstOrgGroupUserRelation relta
+                where relta.orgGroupId in
+                (
+                select relation2.entityId from TstProjectRoleEntityRelation relation2
+                where relation2.type = 'group' AND relation2.projectId = #{projectId}
+                )
+        )
         <if test="keywords != null and keywords != ''">
             AND (
               usr.nickname LIKE CONCAT('%','${keywords}','%' )
@@ -153,8 +167,11 @@
               OR usr.phone LIKE CONCAT('%','${keywords}','%' )
             )
         </if>
-        <if test="exceptIds != null and exceptIds != ''">
-            AND usr.id NOT IN #{exceptIds}
+        <if test="exceptIds != null and exceptIds.size > 0">
+            AND usr.id NOT IN
+            <foreach collection="exceptIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
         </if>
 
         AND usr.deleted != TRUE

@@ -10,17 +10,18 @@ public class IsuWorkflow extends BaseModel {
     private String code;
     private String descr;
     private Integer displayOrder;
-    private Boolean isFinal;
-    private Boolean isBuildIn = false;
+    private Boolean finalVal;
+	private Boolean defaultVal = false;
+	private Boolean buildIn = false;
     private Integer orgId;
 
-	private List<IsuStatusTransition> statusTransitions = new LinkedList<>();
+	private List<IsuWorkflowTransition> statusTransitions = new LinkedList<>();
 
-	public List<IsuStatusTransition> getStatusTransitions() {
+	public List<IsuWorkflowTransition> getStatusTransitions() {
 		return statusTransitions;
 	}
 
-	public void setStatusTransitions(List<IsuStatusTransition> statusTransitions) {
+	public void setStatusTransitions(List<IsuWorkflowTransition> statusTransitions) {
 		this.statusTransitions = statusTransitions;
 	}
 
@@ -48,18 +49,9 @@ public class IsuWorkflow extends BaseModel {
 	public void setDisplayOrder(Integer displayOrder) {
 		this.displayOrder = displayOrder;
 	}
-	public Boolean getIsFinal() {
-		return isFinal;
-	}
-	public void setIsFinal(Boolean isFinal) {
-		this.isFinal = isFinal;
-	}
-	public Boolean getIsBuildIn() {
-		return isBuildIn;
-	}
-	public void setIsBuildIn(Boolean isBuildIn) {
-		this.isBuildIn = isBuildIn;
-	}
+
+
+
 	public Integer getOrgId() {
 		return orgId;
 	}
@@ -67,4 +59,27 @@ public class IsuWorkflow extends BaseModel {
 		this.orgId = orgId;
 	}
 
+	public Boolean getFinal() {
+		return finalVal;
+	}
+
+	public void setFinal(Boolean aFinal) {
+		finalVal = aFinal;
+	}
+
+	public Boolean getDefaultVal() {
+		return defaultVal;
+	}
+
+	public void setDefaultVal(Boolean aDefault) {
+		defaultVal = aDefault;
+	}
+
+	public Boolean getBuildIn() {
+		return buildIn;
+	}
+
+	public void setBuildIn(Boolean buildIn) {
+    this.buildIn = buildIn;
+	}
 }

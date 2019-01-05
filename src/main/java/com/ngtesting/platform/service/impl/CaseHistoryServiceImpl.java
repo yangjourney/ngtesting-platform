@@ -6,7 +6,7 @@ import com.ngtesting.platform.dao.UserDao;
 import com.ngtesting.platform.model.TstCase;
 import com.ngtesting.platform.model.TstCaseHistory;
 import com.ngtesting.platform.model.TstUser;
-import com.ngtesting.platform.service.CaseHistoryService;
+import com.ngtesting.platform.service.intf.CaseHistoryService;
 import com.ngtesting.platform.utils.StringUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +21,7 @@ public class CaseHistoryServiceImpl extends BaseServiceImpl implements CaseHisto
     CaseHistoryDao caseHistoryDao;
 
     @Override
-    public void saveHistory(TstUser user, Constant.CaseAct act, TstCase testCase, String field) {
+    public void saveHistory(TstUser user, Constant.EntityAct act, Integer caseId, String field) {
 	    String action = act.msg;
 
         String msg = "用户" + StringUtil.highlightDict(user.getNickname()) + action;
@@ -32,7 +32,7 @@ public class CaseHistoryServiceImpl extends BaseServiceImpl implements CaseHisto
         }
         TstCaseHistory his = new TstCaseHistory();
         his.setTitle(msg);
-        his.setCaseId(testCase.getId());
+        his.setCaseId(caseId);
         caseHistoryDao.save(his);
     }
 

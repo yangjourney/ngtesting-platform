@@ -3,7 +3,7 @@ package com.ngtesting.platform.action.client;
 import com.ngtesting.platform.action.BaseAction;
 import com.ngtesting.platform.config.Constant;
 import com.ngtesting.platform.model.TstUser;
-import com.ngtesting.platform.service.WelcomeService;
+import com.ngtesting.platform.service.intf.WelcomeService;
 import com.ngtesting.platform.utils.AuthPassport;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -30,7 +30,7 @@ public class WelcomeAction extends BaseAction {
 	public Map<String, Object> test(HttpServletRequest request) {
 		Map<String, Object> ret = new HashMap<String, Object>();
 
-		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
+		TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 
         List ls = welcomeService.test();
 

@@ -1,17 +1,14 @@
 package com.ngtesting.platform.model;
 
 
-import com.ngtesting.platform.config.ConstantIssue;
-
 public class IsuFieldDefine extends BaseModel {
-
 	private static final long serialVersionUID = 8734289343612127207L;
 
-	private String code;
+	private String colCode;
 	private String label;
 
-	private ConstantIssue.IssueFilterType type;
-	private ConstantIssue.IssueFilterInput input;
+	private String type;
+	private String input;
 
 	private Boolean defaultShowInFilters;
 	private Integer filterOrdr;
@@ -19,12 +16,18 @@ public class IsuFieldDefine extends BaseModel {
 	private Boolean defaultShowInColumns;
 	private Integer columnOrdr;
 
-	public String getCode() {
-		return code;
+	private Boolean defaultShowInPage;
+	private Integer elemOrdr;
+	private Boolean readonly;
+
+	private Boolean fullLine;
+
+	public String getColCode() {
+		return colCode;
 	}
 
-	public void setCode(String code) {
-		this.code = code;
+	public void setColCode(String colCode) {
+		this.colCode = colCode;
 	}
 
 	public String getLabel() {
@@ -35,19 +38,19 @@ public class IsuFieldDefine extends BaseModel {
 		this.label = label;
 	}
 
-	public ConstantIssue.IssueFilterType getType() {
+	public String getType() {
 		return type;
 	}
 
-	public void setType(ConstantIssue.IssueFilterType type) {
+	public void setType(String type) {
 		this.type = type;
 	}
 
-	public ConstantIssue.IssueFilterInput getInput() {
+	public String getInput() {
 		return input;
 	}
 
-	public void setInput(ConstantIssue.IssueFilterInput input) {
+	public void setInput(String input) {
 		this.input = input;
 	}
 
@@ -81,5 +84,37 @@ public class IsuFieldDefine extends BaseModel {
 
 	public void setColumnOrdr(Integer columnOrdr) {
 		this.columnOrdr = columnOrdr;
+	}
+
+    public Boolean getDefaultShowInPage() {
+        return defaultShowInPage;
+    }
+
+    public void setDefaultShowInPage(Boolean defaultShowInPage) {
+        this.defaultShowInPage = defaultShowInPage;
+    }
+
+    public Integer getElemOrdr() {
+        return elemOrdr;
+    }
+
+    public void setElemOrdr(Integer elemOrdr) {
+        this.elemOrdr = elemOrdr;
+    }
+
+    public Boolean getFullLine() {
+        return fullLine;
+    }
+
+    public void setFullLine(Boolean fullLine) {
+        this.fullLine = fullLine;
+    }
+
+	public Boolean getReadonly() {
+		return readonly;
+	}
+
+	public void setReadonly(Boolean readonly) {
+		this.readonly = readonly;
 	}
 }

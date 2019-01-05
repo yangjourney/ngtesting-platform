@@ -7,6 +7,30 @@
         WHERE o.orgId=#{orgId}
 
         AND o.disabled!=TRUE AND o.deleted!=TRUE
+        ORDER BY o.ordr ASC
+    </select>
+
+    <select id="listBySolutionId" resultType="IsuPriority" parameterType="Map">
+        SELECT * FROM IsuPriority o
+        JOIN IsuPrioritySolutionItem r ON r.priorityId = o.id
+        WHERE r.solutionId = #{solutionId}
+          AND o.orgId=#{orgId}
+
+        AND o.disabled!=TRUE AND o.deleted!=TRUE
+        ORDER BY o.ordr ASC
+    </select>
+
+    <select id="listNotInSolution" resultType="IsuPriority" parameterType="Map">
+        SELECT * FROM IsuPriority o
+
+        WHERE o.orgId=#{orgId}
+         AND o.id NOT IN (
+          SELECT tmp.id FROM IsuPriority tmp
+          JOIN IsuPrioritySolutionItem r ON r.priorityId = tmp.id
+          WHERE r.solutionId = #{solutionId} AND tmp.orgId=#{orgId}
+        )
+
+        AND o.disabled!=TRUE AND o.deleted!=TRUE
         ORDER BY ordr ASC
     </select>
 
@@ -21,9 +45,9 @@
 
     <insert id="save" parameterType="IsuPriority" useGeneratedKeys="true" keyProperty="id">
         insert into IsuPriority
-        (label,value,descr,orgId,ordr,isDefault,deleted,disabled,createTime)
+        (label,value,descr,orgId, defaultVal, buildIn,ordr,deleted,disabled,createTime)
         values
-        (#{label},#{value},#{descr},#{orgId},#{ordr},#{isDefault},FALSE,FALSE,NOW())
+        (#{label},#{value},#{descr},#{orgId}, #{defaultVal}, #{buildIn},#{ordr},FALSE,FALSE,NOW())
     </insert>
 
     <update id="update" parameterType="IsuPriority">
@@ -43,12 +67,12 @@
 
     <update id="removeDefault">
         UPDATE IsuPriority
-        SET isDefault=FALSE, updateTime=NOW()
+        SET defaultVal=FALSE, updateTime=NOW()
         WHERE orgId=#{orgId}
     </update>
     <update id="setDefault">
         UPDATE IsuPriority
-        SET isDefault=TRUE, updateTime=NOW()
+        SET defaultVal=TRUE, updateTime=NOW()
         WHERE id=#{id} AND orgId=#{orgId}
     </update>
 

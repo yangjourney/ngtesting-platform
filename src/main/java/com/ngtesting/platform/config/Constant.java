@@ -7,6 +7,7 @@ import java.util.Map;
 
 public class Constant {
     public static final String HTTP_SESSION_USER_PROFILE = "http_session_user_profile";
+    public static final String HTTP_SESSION_USER_PERMISSION = "http_session_user_permission";
 
     // 配置项，初始化在 PropertyConfig.processProperties()
     public static String WORK_DIR;
@@ -81,7 +82,7 @@ public class Constant {
         put("asr", "ngtesting-asr");
     }};
 
-    public enum CaseAct {
+    public enum EntityAct {
         create("create", "创建"),
         rename("rename", "改名"),
         update("update", "更新"),
@@ -89,16 +90,24 @@ public class Constant {
         copy("copy", "复制"),
         delete("delete", "删除"),
 
+        assign("assign", "分配经办人"),
+        changeStatus("changeStatus", "修改状态"),
+        link("link", "建立链接"),
+        watch("watch", "关注问题"),
+        unwatch("unwatch", "取消关注"),
+        removeWatch("removeWatch", "移除关注人"),
+        changeWatch("changeWatch", "修改关注列表"),
+
         attachment_upload("attachment_upload", "上传附件"),
         attachment_delete("attachment_delete", "删除附件"),
 
-        comments_add("comments_add", "新增注释"),
-        comments_update("comments_update", "修改注释"),
-        comments_delete("comments_delete", "删除注释"),
+//        comments_add("comments_add", "新增注释"),
+//        comments_update("comments_update", "修改注释"),
+//        comments_delete("comments_delete", "删除注释"),
 
         exe_result("exe_result", "标注执行结果");
 
-        CaseAct(String code, String msg) {
+        EntityAct(String code, String msg) {
             this.code = code;
             this.msg = msg;
         }

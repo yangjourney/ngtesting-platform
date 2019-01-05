@@ -5,10 +5,10 @@ import com.alibaba.fastjson.JSONObject;
 import com.ngtesting.platform.action.BaseAction;
 import com.ngtesting.platform.config.Constant;
 import com.ngtesting.platform.model.*;
-import com.ngtesting.platform.service.OrgRoleGroupRelationService;
-import com.ngtesting.platform.service.OrgRolePrivilegeRelationService;
-import com.ngtesting.platform.service.OrgRoleService;
-import com.ngtesting.platform.service.OrgRoleUserRelationService;
+import com.ngtesting.platform.service.intf.OrgRoleGroupRelationService;
+import com.ngtesting.platform.service.intf.OrgRolePrivilegeRelationService;
+import com.ngtesting.platform.service.intf.OrgRoleService;
+import com.ngtesting.platform.service.intf.OrgRoleUserRelationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -56,8 +56,8 @@ public class OrgRoleAdmin extends BaseAction {
 	public Map<String, Object> get(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
 
-		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
-		Integer orgId = userVo.getDefaultOrgId();
+		TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
+		Integer orgId = user.getDefaultOrgId();
 		Integer orgRoleId = json.getInteger("id");
 
 		TstOrgRole po;
@@ -96,8 +96,8 @@ public class OrgRoleAdmin extends BaseAction {
 	public Map<String, Object> save(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
 
-		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
-		Integer orgId = userVo.getDefaultOrgId();
+		TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
+		Integer orgId = user.getDefaultOrgId();
 
 		TstOrgRole orgRoleVo = JSON.parseObject(JSON.toJSONString(json.get("orgRole")), TstOrgRole.class);
 		TstOrgRole po = orgRoleService.save(orgRoleVo, orgId);

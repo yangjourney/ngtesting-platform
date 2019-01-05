@@ -8,8 +8,8 @@ import com.ngtesting.platform.dao.UserDao;
 import com.ngtesting.platform.model.TstCase;
 import com.ngtesting.platform.model.TstCaseComments;
 import com.ngtesting.platform.model.TstUser;
-import com.ngtesting.platform.service.CaseCommentsService;
-import com.ngtesting.platform.service.CaseHistoryService;
+import com.ngtesting.platform.service.intf.CaseCommentsService;
+import com.ngtesting.platform.service.intf.CaseHistoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,21 +30,30 @@ public class CaseCommentsServiceImpl extends BaseServiceImpl implements CaseComm
     public TstCaseComments save(JSONObject json, TstUser user) {
         TstCaseComments vo = JSON.parseObject(JSON.toJSONString(json), TstCaseComments.class);
 
+        vo.setCaseId(json.getInteger("modelId"));
+
+        save(vo, user);
+        return vo;
+    }
+
+    @Override
+    @Transactional
+    public TstCaseComments save(TstCaseComments vo, TstUser user) {
         vo.setUserId(user.getId());
         vo.setUserName(user.getNickname());
         vo.setUserAvatar(user.getAvatar());
 
         if (vo.getId() == null) {
             caseCommentsDao.save(vo);
-//            caseHistoryService.saveHistory(user, Constant.CaseAct.comments_add, testCase, vo.getContent());
+//            caseHistoryService.saveHistory(user, Constant.EntityAct.comments_add, testCase, vo.getContent());
         } else {
             TstCase testCase = caseDao.get(vo.getCaseId(), user.getDefaultPrjId());
             if (testCase == null) {
                 return null;
             }
 
-            caseCommentsDao.update(vo);
-//            caseHistoryService.saveHistory(user, Constant.CaseAct.comments_update, testCase, vo.getContent());
+            caseCommentsDao.update(vo, user.getId());
+//            caseHistoryService.saveHistory(user, Constant.EntityAct.comments_update, testCase, vo.getContent());
         }
 
         return vo;
@@ -62,21 +71,8 @@ public class CaseCommentsServiceImpl extends BaseServiceImpl implements CaseComm
 
         Boolean result = caseCommentsDao.delete(id, user.getId());
 
-//        caseHistoryService.saveHistory(user, Constant.CaseAct.comments_delete, testCase, comments.getContent());
+//        caseHistoryService.saveHistory(user, Constant.EntityAct.comments_delete, testCase, comments.getContent());
         return result;
-    }
-
-    @Override
-    public TstCaseComments genVo(TstCaseComments po) {
-        if (po.getUpdateTime() == null) {
-            po.setUpdateTime(po.getCreateTime());
-        }
-
-        TstUser user = userDao.get(po.getUserId());
-
-        po.setUserName(user.getNickname());
-        po.setUserAvatar(user.getAvatar());
-        return po;
     }
 
 }

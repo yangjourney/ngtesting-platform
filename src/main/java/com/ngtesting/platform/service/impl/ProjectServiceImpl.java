@@ -7,7 +7,7 @@ import com.ngtesting.platform.dao.ProjectPrivilegeDao;
 import com.ngtesting.platform.model.TstProject;
 import com.ngtesting.platform.model.TstProjectAccessHistory;
 import com.ngtesting.platform.model.TstUser;
-import com.ngtesting.platform.service.*;
+import com.ngtesting.platform.service.intf.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +25,7 @@ public class ProjectServiceImpl extends BaseServiceImpl implements ProjectServic
 	private static final Log log = LogFactory.getLog(ProjectServiceImpl.class);
 
     @Autowired
-	HistoryService historyService;
+    HistoryService historyService;
 	@Autowired
 	private ProjectDao projectDao;
     @Autowired
@@ -38,7 +38,7 @@ public class ProjectServiceImpl extends BaseServiceImpl implements ProjectServic
     @Autowired
     private UserService userService;
     @Autowired
-	ProjectPrivilegeService projectPrivilegeService;
+    ProjectPrivilegeService projectPrivilegeService;
 
     @Autowired
     AuthService authService;
@@ -214,10 +214,16 @@ public class ProjectServiceImpl extends BaseServiceImpl implements ProjectServic
         }
     }
 
+    @Override
+    @Transactional
+    public TstProject changeDefaultPrj(TstUser user, Integer projectId) {
+	    return changeDefaultPrj(user, projectId, true);
+    }
+
 	@Override
     @Transactional
-	public TstProject changeDefaultPrj(TstUser user, Integer projectId) {
-	    if (projectId == null) {
+	public TstProject changeDefaultPrj(TstUser user, Integer projectId, Boolean pushMsg) {
+	    if (projectId == null) { // 删除的时候
             setUserDefaultPrjToNullForDelete(projectId);
             projectDao.setDefault(user.getId(), null, null);
 
@@ -232,10 +238,6 @@ public class ProjectServiceImpl extends BaseServiceImpl implements ProjectServic
 
 		TstProject po = get(projectId);
 
-        if (authService.noProjectAndProjectGroupPrivilege(user.getId(), po)) {
-            return null;
-        }
-
         if (po.getType().equals(TstProject.ProjectType.project)) {
             projectDao.genHistory(po.getOrgId(), user.getId(), projectId, po.getName());
 
@@ -244,8 +246,10 @@ public class ProjectServiceImpl extends BaseServiceImpl implements ProjectServic
             user.setDefaultPrjId(projectId);
             user.setDefaultPrjName(po.getName());
 
-            pushSettingsService.pushRecentProjects(user);
-            pushSettingsService.pushPrjSettings(user);
+            if (pushMsg) {
+                pushSettingsService.pushRecentProjects(user);
+                pushSettingsService.pushPrjSettings(user);
+            }
 		}
 
 		return po;
@@ -282,18 +286,18 @@ public class ProjectServiceImpl extends BaseServiceImpl implements ProjectServic
             for (TstProject child : children) {
                 child = genVo(child, privMap);
 
-                if (child.getPrivs() != null
-                        && child.getPrivs().get("project-view") != null
-                        && child.getPrivs().get("project-view") ) {
-                    childCanView = true;
-                }
+//                if (child.getPrivs() != null
+//                        && child.getPrivs().getDetail("project-view") != null
+//                        && child.getPrivs().getDetail("project-view") ) {
+//                    childCanView = true;
+//                }
                 voList.add(child);
             }
             po.setChildrenNumb(po.getChildren().size());
 
-            if (childCanView) {
-                po.getPrivs().put("project-view", true);
-            }
+//            if (childCanView) {
+//                po.getPrivs().put("project-view", true);
+//            }
         }
 
         return voList;

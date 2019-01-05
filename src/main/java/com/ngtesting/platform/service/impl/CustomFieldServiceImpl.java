@@ -1,71 +1,72 @@
 package com.ngtesting.platform.service.impl;
 
-import com.ngtesting.platform.dao.CustomFieldDao;
-import com.ngtesting.platform.dao.CustomFieldOptionDao;
-import com.ngtesting.platform.model.TstCustomField;
-import com.ngtesting.platform.service.CustomFieldOptionService;
-import com.ngtesting.platform.service.CustomFieldService;
-import com.ngtesting.platform.service.ProjectService;
+import com.ngtesting.platform.config.ConstantIssue;
+import com.ngtesting.platform.dao.*;
+import com.ngtesting.platform.model.CustomField;
+import com.ngtesting.platform.model.TstCasePriority;
+import com.ngtesting.platform.model.TstCaseType;
+import com.ngtesting.platform.service.intf.CustomFieldService;
+import com.ngtesting.platform.service.intf.ProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 @Service
 public class CustomFieldServiceImpl extends BaseServiceImpl implements CustomFieldService {
+
     @Autowired
     CustomFieldDao customFieldDao;
     @Autowired
     CustomFieldOptionDao customFieldOptionDao;
 
     @Autowired
-    ProjectService projectService;
+    IssueFieldDao issueFieldDao;
+
     @Autowired
-    CustomFieldOptionService customFieldOptionService;
+    CaseTypeDao caseTypeDao;
+    @Autowired
+    CasePriorityDao casePriorityDao;
+
+    @Autowired
+    IssuePageElementDao elementDao;
+
+    @Autowired
+    ProjectService projectService;
 
     @Override
-    public List<TstCustomField> list(Integer orgId) {
-        List<TstCustomField> ls = customFieldDao.list(orgId);
+    public List<CustomField> list(Integer orgId, String applyTo, String keywords) {
+        List<CustomField> ls = customFieldDao.list(orgId, applyTo, keywords);
 
         return ls;
     }
 
     @Override
-    public List<TstCustomField> listForCaseByProject(Integer orgId, Integer projectId) {
-        List<TstCustomField> ls = customFieldDao.listForCaseByProject(
-                orgId, projectId, TstCustomField.FieldApplyTo.test_case.toString());
-
-        return ls;
-    }
-
-    @Override
-    public TstCustomField get(Integer id, Integer orgId) {
+    public CustomField getDetail(Integer id, Integer orgId) {
         return customFieldDao.getDetail(id, orgId);
     }
 
     @Override
     @Transactional
-    public TstCustomField save(TstCustomField vo, Integer orgId) {
+    public CustomField save(CustomField vo, Integer orgId) {
         vo.setOrgId(orgId);
 
         if (vo.getId() == null) {
-            Integer maxOrder = customFieldDao.getMaxOrdrNumb(orgId);
+            Integer maxOrder = customFieldDao.getMaxOrdrNumb(orgId, vo.getApplyTo().toString());
             if (maxOrder == null) {
                 maxOrder = 0;
             }
             vo.setOrdr(maxOrder + 10);
 
             customFieldDao.save(vo);
-            if (vo.getType().equals(TstCustomField.FieldType.dropdown)) {
-                customFieldOptionDao.saveAll(vo.getId(), vo.getOptions());
-            }
         } else {
             Integer count = customFieldDao.update(vo);
             if (count == 0) {
                 return null;
             }
+
+            elementDao.updateFromCustomField(vo);
         }
 
         return vo;
@@ -74,25 +75,21 @@ public class CustomFieldServiceImpl extends BaseServiceImpl implements CustomFie
     @Override
     public Boolean delete(Integer id, Integer orgId) {
         Integer count = customFieldDao.delete(id, orgId);
-        if (count == 0) {
-            return false;
-        }
-
-        return true;
+        return count > 0;
     }
 
     @Override
-    public Boolean changeOrderPers(Integer id, String act, Integer orgId) {
-        TstCustomField curr = customFieldDao.get(id, orgId);
+    public Boolean changeOrderPers(Integer id, String act, Integer orgId, String applyTo) {
+        CustomField curr = customFieldDao.get(id, orgId);
         if (curr == null) {
             return false;
         }
 
-        TstCustomField neighbor = null;
+        CustomField neighbor = null;
         if ("up".equals(act)) {
-            neighbor = customFieldDao.getPrev(curr.getOrdr(), orgId);
+            neighbor = customFieldDao.getPrev(curr.getOrdr(), orgId, applyTo);
         } else if ("down".equals(act)) {
-            neighbor = customFieldDao.getNext(curr.getOrdr(), orgId);
+            neighbor = customFieldDao.getNext(curr.getOrdr(), orgId, applyTo);
         }
         if (neighbor == null) {
             return false;
@@ -122,19 +119,66 @@ public class CustomFieldServiceImpl extends BaseServiceImpl implements CustomFie
         return ret;
     }
 
-    @Override
-    public List<String> listApplyTo() {
-        List<String> ls = new LinkedList();
-        for (TstCustomField.FieldApplyTo item : TstCustomField.FieldApplyTo.values()) {
-            ls.add(item.toString());
+    @Override // TODO: cached
+    public Map<String, Object> fetchProjectFieldForCase(Integer orgId, Integer projectId) {
+        List<TstCaseType> caseTypes = caseTypeDao.list(orgId);
+        List<TstCasePriority> casePriorities = casePriorityDao.list(orgId);
+
+        Map<String, Object> map = new HashMap<>();
+        map.put("type", caseTypes);
+        map.put("priority", casePriorities);
+
+        List<Map> fields = customFieldDao.listForCase(orgId);
+        for (Map field : fields) {
+            map.put(field.get("colCode").toString(), field.get("options"));
         }
-        return ls;
+
+        Map<String, Object> ret = new HashMap<>();
+        ret.put("fields", fields);
+        ret.put("props", map);
+
+        return ret;
+    }
+
+    // 获取input及其对应的type，用于表单联动
+    @Override
+    public Map<String, Map> fetchInputMap() {
+        List<Map> inputs = customFieldDao.fetchInputMap();
+
+        Map<String, Map> ret = new LinkedHashMap<>();
+        for (Map<String, Object> input : inputs) {
+            ret.put(input.get("value").toString(), input);
+        }
+
+        return ret;
     }
 
     @Override
-    public List<String> listType() {
-        List<String> ls = new LinkedList<String>();
-        for (TstCustomField.FieldType item : TstCustomField.FieldType.values()) {
+    public Map inputMap() {
+        List<Map> ls = customFieldDao.listInput();
+
+        Map<String, String> ret = new LinkedHashMap<>();
+        for (Map<String, String> input : ls) {
+            ret.put(input.get("value"), input.get("label"));
+        }
+        return ret;
+    }
+
+    @Override
+    public Map typeMap() {
+        List<Map> ls = customFieldDao.listType();
+
+        Map<String, String> ret = new LinkedHashMap<>();
+        for (Map<String, String> input : ls) {
+            ret.put(input.get("value"), input.get("label"));
+        }
+        return ret;
+    }
+
+    @Override
+    public List<String> listApplyTo() {
+        List<String> ls = new LinkedList();
+        for (CustomField.FieldApplyTo item : CustomField.FieldApplyTo.values()) {
             ls.add(item.toString());
         }
         return ls;
@@ -143,7 +187,7 @@ public class CustomFieldServiceImpl extends BaseServiceImpl implements CustomFie
     @Override
     public List<String> listFormat() {
         List<String> ls = new LinkedList();
-        for (TstCustomField.FieldFormat item : TstCustomField.FieldFormat.values()) {
+        for (ConstantIssue.TextFormat item : ConstantIssue.TextFormat.values()) {
             ls.add(item.toString());
         }
         return ls;

@@ -25,8 +25,12 @@
         <if test="keywords != null and keywords != ''">
             AND grp.name LIKE CONCAT('%','${keywords}','%' )
         </if>
-        <if test="exceptIds != null and exceptIds != ''">
-            AND grp.id NOT IN #{exceptIds}
+
+        <if test="exceptIds != null and exceptIds.size > 0">
+            AND grp.id NOT IN
+            <foreach collection="exceptIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
         </if>
 
         AND grp.deleted != TRUE
@@ -48,17 +52,14 @@
     <select id="get" resultType="TstOrgGroup">
         SELECT * FROM TstOrgGroup grp
 
-        WHERE grp.id = #{id}
-        <if test="orgId != null">
-            AND grp.orgId = #{orgId}
-        </if>
+        WHERE grp.id = #{id} AND grp.orgId = #{orgId}
     </select>
 
     <insert id="save" parameterType="TstOrgGroup" useGeneratedKeys="true" keyProperty="id">
         insert into TstOrgGroup
-          (name,orgId,deleted,disabled,createTime)
+          (name,orgId,buildIn,deleted,disabled,createTime)
         values
-          (#{name},#{orgId},FALSE,FALSE,NOW())
+          (#{name},#{orgId},#{buildIn},FALSE,FALSE,NOW())
     </insert>
 
     <update id="update" parameterType="TstOrgGroup">

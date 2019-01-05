@@ -8,8 +8,7 @@ import com.ngtesting.platform.config.Constant;
 import com.ngtesting.platform.config.WsConstant;
 import com.ngtesting.platform.model.TstMsg;
 import com.ngtesting.platform.model.TstUser;
-import com.ngtesting.platform.service.CustomFieldService;
-import com.ngtesting.platform.service.MsgService;
+import com.ngtesting.platform.service.intf.MsgService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -31,9 +30,6 @@ public class MsgAction extends BaseAction {
 
 	@Autowired
     MsgService msgService;
-
-    @Autowired
-    CustomFieldService customFieldService;
 
 	@RequestMapping(value = "list", method = RequestMethod.POST)
 	@ResponseBody
@@ -63,9 +59,9 @@ public class MsgAction extends BaseAction {
 
 		Integer id = json.getInteger("id");
 
-		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
+		TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 
-		Boolean result = msgService.delete(id, userVo.getId());
+		Boolean result = msgService.delete(id, user.getId());
 		if (!result) {
             return authFail();
         }

@@ -12,18 +12,14 @@
 
     <select id="get" resultType="TstCasePriority">
         SELECT * FROM TstCasePriority o
-
-        WHERE o.id = #{id}
-        <if test="orgId != null">
-            AND o.orgId=#{orgId}
-        </if>
+        WHERE o.id = #{id} AND o.orgId=#{orgId}
     </select>
 
     <insert id="save" parameterType="TstCasePriority" useGeneratedKeys="true" keyProperty="id">
         insert into TstCasePriority
-        (label,value,descr,orgId,ordr,isDefault,deleted,disabled,createTime)
+        (label,value,descr,orgId,ordr,defaultVal,deleted,disabled,createTime)
         values
-        (#{label},#{value},#{descr},#{orgId},#{ordr},#{isDefault},FALSE,FALSE,NOW())
+        (#{label},#{value},#{descr},#{orgId},#{ordr},#{defaultVal},FALSE,FALSE,NOW())
     </insert>
 
     <update id="update" parameterType="TstCasePriority">
@@ -43,12 +39,12 @@
 
     <update id="removeDefault">
         UPDATE TstCasePriority
-        SET isDefault=FALSE, updateTime=NOW()
+        SET defaultVal=FALSE, updateTime=NOW()
         WHERE orgId=#{orgId}
     </update>
     <update id="setDefault">
         UPDATE TstCasePriority
-        SET isDefault=TRUE, updateTime=NOW()
+        SET defaultVal=TRUE, updateTime=NOW()
         WHERE id=#{id} AND orgId=#{orgId}
     </update>
 

@@ -9,8 +9,8 @@ import com.ngtesting.platform.config.Constant;
 import com.ngtesting.platform.model.TstOrgGroup;
 import com.ngtesting.platform.model.TstOrgGroupUserRelation;
 import com.ngtesting.platform.model.TstUser;
-import com.ngtesting.platform.service.OrgGroupService;
-import com.ngtesting.platform.service.OrgGroupUserRelationService;
+import com.ngtesting.platform.service.intf.OrgGroupService;
+import com.ngtesting.platform.service.intf.OrgGroupUserRelationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -37,8 +37,8 @@ public class OrgGroupAdmin extends BaseAction {
 	public Map<String, Object> list(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
 
-		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
-		Integer orgId = userVo.getDefaultOrgId();
+		TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
+		Integer orgId = user.getDefaultOrgId();
 
 		String keywords = json.getString("keywords");
 		Boolean disabled = json.getBoolean("disabled");
@@ -60,8 +60,8 @@ public class OrgGroupAdmin extends BaseAction {
 	public Map<String, Object> get(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
 
-		TstUser userVo = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
-		Integer orgId = userVo.getDefaultOrgId();
+		TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
+		Integer orgId = user.getDefaultOrgId();
 		Integer orgGroupId = json.getInteger("id");
 
 		TstOrgGroup group;

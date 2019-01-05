@@ -3,8 +3,8 @@
 <mapper namespace="com.ngtesting.platform.dao.CaseInTaskDao" >
 
     <select id="query" resultType="TstCaseInTask">
-        SELECT cs.name name, cs.id id,
-          o.id entityId, o.pId pId, o.isLeaf isLeaf, o.ordr ordr
+        SELECT cs.id id, cs.name name, cs.typeId, cs.priorityId,
+          o.id entityId, o.pId pId, o.isLeaf isLeaf, o.status status, o.ordr ordr
 
         FROM TstCaseInTask o
         JOIN TstCase cs ON o.caseId = cs.id
@@ -19,21 +19,18 @@
     </select>
 
     <select id="get" resultType="TstCaseInTask">
-        SELECT cs.id id, cs.name name,
-          o.id entityId, o.pId pId, o.isLeaf isLeaf, o.ordr ordr
+        SELECT cs.id id, cs.name name, cs.typeId, cs.priorityId,
+        o.id entityId, o.pId pId, o.isLeaf isLeaf, o.status status, o.ordr ordr
 
         FROM TstCaseInTask o
         JOIN TstCase cs ON o.caseId = cs.id
 
         WHERE o.id=#{id}
-        <if test="projectId != null">
-            AND o.projectId=#{projectId}
-        </if>
     </select>
 
     <select id="getDetail" resultMap="caseInTaskMap">
         SELECT cs.id id, cs.*, o.id entityId,
-          o.id entityId, o.pId pId, o.isLeaf isLeaf, o.status status, o.result result, o.ordr ordr,
+          o.pId pId, o.isLeaf isLeaf, o.status status, o.result result, o.ordr ordr,
           o.planId planId, o.taskId taskId
 
         FROM TstCaseInTask o
@@ -57,23 +54,26 @@
 
     <resultMap id="caseInTaskMap" type="TstCaseInTask" autoMapping="true">
         <id column="id" property="id"/>
-
-        <id column="caseInTaskId" property="caseInTaskId"/>
+        <id column="entityId" property="entityId"/>
 
         <collection property="steps" select="com.ngtesting.platform.dao.CaseStepDao.listByCaseId"
                     column="{id=id}">
         </collection>
 
-        <collection property="comments" select="com.ngtesting.platform.dao.CaseCommentsDao.listByCaseId"
-                    column="{id=id}">
+        <collection property="comments" select="com.ngtesting.platform.dao.CaseInTaskCommentsDao.listByCaseInTaskId"
+                    column="{id=entityId}">
         </collection>
 
-        <collection property="attachments" select="com.ngtesting.platform.dao.CaseAttachmentDao.listByCaseId"
-                    column="{id=id}">
+        <collection property="attachments" select="com.ngtesting.platform.dao.CaseInTaskAttachmentDao.listByCaseInTaskId"
+                    column="{id=entityId}">
+        </collection>
+
+        <collection property="issues" select="com.ngtesting.platform.dao.CaseInTaskIssueDao.listByCaseInTaskId"
+                    column="{id=entityId}">
         </collection>
 
         <collection property="histories" select="com.ngtesting.platform.dao.CaseInTaskHistoryDao.listByCaseInTaskId"
-                    column="{caseInTaskId=entityId}">
+                    column="{id=entityId}">
         </collection>
     </resultMap>
 

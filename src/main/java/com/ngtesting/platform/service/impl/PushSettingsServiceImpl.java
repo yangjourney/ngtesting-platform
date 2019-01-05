@@ -2,10 +2,11 @@ package com.ngtesting.platform.service.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.ngtesting.platform.config.WsConstant;
+import com.ngtesting.platform.model.IsuQuery;
 import com.ngtesting.platform.model.TstOrg;
 import com.ngtesting.platform.model.TstProjectAccessHistory;
 import com.ngtesting.platform.model.TstUser;
-import com.ngtesting.platform.service.*;
+import com.ngtesting.platform.service.intf.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,9 @@ public class PushSettingsServiceImpl extends BaseServiceImpl implements PushSett
     ProjectPrivilegeService projectPrivilegeService;
     @Autowired
     CasePropertyService casePropertyService;
+
+    @Autowired
+    private IssueQueryService issueQueryService;
 
     @Autowired
     OrgService orgService;
@@ -59,7 +63,7 @@ public class PushSettingsServiceImpl extends BaseServiceImpl implements PushSett
 
         Map<String, Boolean> orgPrivileges = orgRolePrivilegeService.listByUser(userId, orgId);
 
-        Map<String,Map<String,String>> casePropertyMap = casePropertyService.getMap(orgId);
+        Map<String,Map<String,String>> casePropertyValMap = casePropertyService.getMap(orgId);
 
         ret.put("orgPrivileges", orgPrivileges);
 
@@ -69,7 +73,7 @@ public class PushSettingsServiceImpl extends BaseServiceImpl implements PushSett
         ret.put("defaultPrjId", user.getDefaultPrjId());
         ret.put("defaultPrjName", user.getDefaultPrjName());
 
-        ret.put("casePropertyMap", casePropertyMap);
+        ret.put("casePropertyValMap", casePropertyValMap);
 
         sendMsg(user, ret);
     }
@@ -85,8 +89,22 @@ public class PushSettingsServiceImpl extends BaseServiceImpl implements PushSett
         Integer prjId = user.getDefaultPrjId();
 
         Map<String, Boolean> prjPrivileges = projectPrivilegeService.listByUser(userId, prjId, orgId);
-        ret.put("prjPrivileges", prjPrivileges);
+        ret.put("prjId", user.getDefaultPrjId());
         ret.put("prjName", user.getDefaultPrjName());
+
+        ret.put("prjPrivileges", prjPrivileges);
+
+        sendMsg(user, ret);
+    }
+
+    @Override
+    public void pushRecentQueries(TstUser user) {
+        Map<String, Object> ret = new HashMap<>();
+        ret.put("code", 1);
+        ret.put("type", WsConstant.WS_RECENT_QUERIES);
+
+        List<IsuQuery> pos = issueQueryService.listRecentQuery(user.getDefaultOrgId(), user.getId());
+        ret.put("recentQueries", pos);
 
         sendMsg(user, ret);
     }

@@ -7,7 +7,8 @@ public class IsuType extends BaseModel {
     private String value;
 
     private String descr;
-    private Boolean isDefault = false;
+    private Boolean defaultVal = false;
+    private Boolean buildIn = false;
     private Integer ordr;
     private Integer orgId;
 
@@ -48,12 +49,19 @@ public class IsuType extends BaseModel {
         this.ordr = ordr;
     }
 
-    public Boolean getIsDefault() {
-        return this.isDefault;
+    public Boolean getDefaultVal() {
+        return defaultVal;
     }
 
-    public void setIsDefault(Boolean isDefault) {
-        this.isDefault = isDefault;
+    public void setDefaultVal(Boolean aDefault) {
+        defaultVal = aDefault;
     }
 
+    public Boolean getBuildIn() {
+        return buildIn;
+    }
+
+    public void setBuildIn(Boolean buildIn) {
+      this.buildIn = buildIn;
+    }
 }

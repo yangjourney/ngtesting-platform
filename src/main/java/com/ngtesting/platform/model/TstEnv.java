@@ -2,19 +2,20 @@ package com.ngtesting.platform.model;
 
 public class TstEnv extends BaseModel {
     private static final long serialVersionUID = -8999964583887292845L;
-    private String name;
+    private String label;
     private String descr;
 
     private Integer projectId;
+    private Integer orgId;
 
     private Integer ordr;
 
-    public String getName() {
-        return name;
+    public String getLabel() {
+        return label;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setLabel(String label) {
+        this.label = label;
     }
 
     public String getDescr() {
@@ -39,5 +40,13 @@ public class TstEnv extends BaseModel {
 
     public void setOrdr(Integer ordr) {
         this.ordr = ordr;
+    }
+
+    public Integer getOrgId() {
+        return orgId;
+    }
+
+    public void setOrgId(Integer orgId) {
+        this.orgId = orgId;
     }
 }

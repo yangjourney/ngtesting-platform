@@ -10,14 +10,13 @@ public interface UserDao {
                         @Param("keywords") String keywords,
                         @Param("disabled") Boolean disabled);
 
-    List<TstUser> search(@Param("orgId") Integer orgId,
+    List<TstUser> search(@Param("projectId") Integer projectId,
                          @Param("keywords") String keywords,
-                         @Param("exceptIds") String exceptIds);
+                         @Param("exceptIds")  List<Integer> exceptIds);
 
     TstUser get(@Param("id") Integer id);
     TstUser getByEmail(@Param("email") String email);
-    TstUser getByEmailAndPassword(@Param("email") String email,
-                                  @Param("password") String password);
+
     TstUser getByToken(@Param("token") String token);
     TstUser getByPhone(@Param("phone") String phone);
 
@@ -39,5 +38,6 @@ public interface UserDao {
     void removeFromOrg(@Param("userId") Integer userId,
                        @Param("orgId") Integer orgId);
 
-    void saveIssueColumns(@Param("issueColumns") String columnsStr, @Param("userId") Integer userId);
+    void saveIssueColumns(@Param("issueColumns") String issueColumns, @Param("userId") Integer userId);
+    void saveIssueFields(@Param("issueFields") String issueFields, @Param("userId") Integer userId);
 }

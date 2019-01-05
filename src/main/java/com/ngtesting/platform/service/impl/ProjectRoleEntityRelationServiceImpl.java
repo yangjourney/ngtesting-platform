@@ -3,7 +3,7 @@ package com.ngtesting.platform.service.impl;
 import com.alibaba.fastjson.JSONObject;
 import com.ngtesting.platform.dao.ProjectRoleEntityRelationDao;
 import com.ngtesting.platform.model.TstProjectRoleEntityRelation;
-import com.ngtesting.platform.service.ProjectRoleEntityRelationService;
+import com.ngtesting.platform.service.intf.ProjectRoleEntityRelationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -54,12 +54,18 @@ public class ProjectRoleEntityRelationServiceImpl extends BaseServiceImpl implem
 	}
 
     @Override
-    public List<TstProjectRoleEntityRelation> changeRolePers(JSONObject json) {
-        Integer projectId = json.getInteger("projectId");
+    public List<TstProjectRoleEntityRelation> changeRolePers(JSONObject json, Integer prjId) {
         Integer projectRoleId = json.getInteger("roleId");
         Integer entityId = json.getInteger("entityId");
 
-        projectRoleEntityRelationDao.changeRole(projectId, projectRoleId, entityId);
+        projectRoleEntityRelationDao.changeRole(prjId, projectRoleId, entityId);
+
+        return listByProject(prjId);
+    }
+
+    @Override
+    public List<TstProjectRoleEntityRelation> remove(Integer projectId, String type, Integer entityId) {
+        projectRoleEntityRelationDao.remove(projectId, type, entityId);
 
         return listByProject(projectId);
     }

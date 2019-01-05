@@ -8,6 +8,7 @@ import java.util.List;
 public interface CaseDao {
     void create(TstCase testCase);
     List<TstCase> query(@Param("projectId") Integer projectId);
+    List<TstCase> queryCaseWithStepInfoByPrj(@Param("projectId") Integer projectId);
 
     TstCase get(@Param("id") Integer id, @Param("prjId") Integer prjId);
     TstCase getDetail(@Param("id") Integer id, @Param("prjId") Integer prjId);
@@ -38,7 +39,7 @@ public interface CaseDao {
                          @Param("updateById") Integer updateById);
 
     Integer updateProp(@Param("id") Integer id,
-                    @Param("prop") String prop,
+                    @Param("code") String code,
                     @Param("value") String value,
                     @Param("projectId") Integer projectId,
                        @Param("updateById") Integer updateById);
@@ -55,4 +56,8 @@ public interface CaseDao {
     void addOrderForNextCases(@Param("srcId") Integer srcId,
                               @Param("targetOrdr") Integer targetOrdr,
                               @Param("targetPid") Integer targetPid);
+
+
+    Integer setDefaultVal(@Param("id") Integer id,
+                          @Param("orgId") Integer orgId);
 }

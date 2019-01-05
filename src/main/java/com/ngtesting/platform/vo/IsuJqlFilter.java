@@ -1,9 +1,6 @@
 package com.ngtesting.platform.vo;
 
 
-import com.ngtesting.platform.config.ConstantIssue;
-import com.ngtesting.platform.model.IsuFieldDefine;
-
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
@@ -11,43 +8,31 @@ import java.util.Map;
 public class IsuJqlFilter implements Serializable {
     private static final long serialVersionUID = -5923944030125754321L;
 
-    String code;
-    String label;
-    ConstantIssue.IssueFilterType type;
-    ConstantIssue.IssueFilterInput input;
-    Map values;
-    List<String> operators;
-    Boolean display;
+    private String code;
+    private String label;
+    private String type;
+    private String input;
+//    Map values;
+    private List<String> operators;
+    private Boolean buildIn;
+    private Boolean display;
 
-    public IsuJqlFilter(IsuFieldDefine field) {
-        this.code = field.getCode();
-        this.label = field.getLabel();
-        this.type = field.getType();
-        this.input = field.getInput();
-        this.display = field.getDefaultShowInFilters();
-
-        if (ConstantIssue.IssueFilterInput.string.equals(type)) {
-            this.operators = ConstantIssue.OperatorsForString;
-        } else if (ConstantIssue.IssueFilterInput.date.equals(type)) {
-            this.operators = ConstantIssue.OperatorsForDate;
-        }
+    public IsuJqlFilter(Map field) {
+        this.code = field.get("colCode").toString();
+        this.label = field.get("label").toString();
+        this.type = field.get("type").toString();
+        this.input = field.get("input").toString();
+        this.buildIn = "1".equals(field.get("buildIn").toString());
+        this.display = field.get("defaultShowInFilters") != null?
+                Boolean.valueOf(field.get("defaultShowInFilters").toString()): null;
     }
 
-    public IsuJqlFilter(IsuFieldDefine field, Map values) {
-        this.code = field.getCode();
-        this.label = field.getLabel();
-        this.type = field.getType();
-        this.input = field.getInput();
-        this.display = field.getDefaultShowInFilters();
+    public Boolean getBuildIn() {
+        return buildIn;
+    }
 
-        this.values = values;
-        if (ConstantIssue.IssueFilterInput.string.equals(input)) {
-            this.operators = ConstantIssue.OperatorsForString;
-        } else if (ConstantIssue.IssueFilterInput.select.equals(input)) {
-            this.operators = ConstantIssue.OperatorsForSelect;
-        } else if (ConstantIssue.IssueFilterInput.date.equals(input)) {
-            this.operators = ConstantIssue.OperatorsForDate;
-        }
+    public void setBuildIn(Boolean buildIn) {
+        this.buildIn = buildIn;
     }
 
     public String getCode() {
@@ -66,29 +51,29 @@ public class IsuJqlFilter implements Serializable {
         this.label = label;
     }
 
-    public ConstantIssue.IssueFilterType getType() {
+    public String getType() {
         return type;
     }
 
-    public void setType(ConstantIssue.IssueFilterType type) {
+    public void setType(String type) {
         this.type = type;
     }
 
-    public ConstantIssue.IssueFilterInput getInput() {
+    public String getInput() {
         return input;
     }
 
-    public void setInput(ConstantIssue.IssueFilterInput input) {
+    public void setInput(String input) {
         this.input = input;
     }
 
-    public Map getValues() {
-        return values;
-    }
-
-    public void setValues(Map values) {
-        this.values = values;
-    }
+//    public Map getValues() {
+//        return values;
+//    }
+//
+//    public void setValues(Map values) {
+//        this.values = values;
+//    }
 
     public List<String> getOperators() {
         return operators;

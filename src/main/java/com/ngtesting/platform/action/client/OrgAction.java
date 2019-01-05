@@ -7,7 +7,10 @@ import com.ngtesting.platform.model.TstHistory;
 import com.ngtesting.platform.model.TstOrg;
 import com.ngtesting.platform.model.TstPlan;
 import com.ngtesting.platform.model.TstUser;
-import com.ngtesting.platform.service.*;
+import com.ngtesting.platform.service.intf.HistoryService;
+import com.ngtesting.platform.service.intf.OrgService;
+import com.ngtesting.platform.service.intf.TestPlanService;
+import com.ngtesting.platform.servlet.PrivOrg;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -28,20 +31,17 @@ public class OrgAction extends BaseAction {
     OrgService orgService;
 
 	@Autowired
-	TestPlanService planService;
+    TestPlanService planService;
 	@Autowired
     HistoryService historyService;
 
 	@RequestMapping(value = "view", method = RequestMethod.POST)
 	@ResponseBody
+    @PrivOrg
 	public Map<String, Object> view(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
 		TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
-		Integer orgId = json.getInteger("id");
-
-        if (userNotInOrg(user.getId(), orgId)) { // 不在组织中
-            return authFail();
-        }
+		Integer orgId = json.getInteger("orgId");
 
 		TstOrg po = orgService.get(orgId);
 
@@ -59,16 +59,14 @@ public class OrgAction extends BaseAction {
 	}
 
 	// 来源于前端上下文的变化
-	@RequestMapping(value = "change", method = RequestMethod.POST)
+	@RequestMapping(value = "changeContext", method = RequestMethod.POST)
 	@ResponseBody
-	public Map<String, Object> change(HttpServletRequest request, @RequestBody JSONObject json) {
+    @PrivOrg
+	public Map<String, Object> changeContext(HttpServletRequest request, @RequestBody JSONObject json) {
 		Map<String, Object> ret = new HashMap<String, Object>();
 
 		TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
-		Integer orgId = json.getInteger("id");
-        if (userNotInOrg(user.getId(), orgId)) {
-            return authFail();
-        }
+		Integer orgId = json.getInteger("orgId");
 
 		orgService.changeDefaultOrg(user, orgId); // 涵盖项目设置WS推送消息
 

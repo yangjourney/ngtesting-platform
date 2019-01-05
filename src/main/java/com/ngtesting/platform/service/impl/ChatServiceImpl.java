@@ -1,7 +1,7 @@
 package com.ngtesting.platform.service.impl;
 
 import com.ngtesting.platform.model.TstThread;
-import com.ngtesting.platform.service.ChatService;
+import com.ngtesting.platform.service.intf.ChatService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -19,7 +19,7 @@ public class ChatServiceImpl extends BaseServiceImpl implements ChatService {
 //        dc.addOrder(Order.asc("id"));
 //        Page listByPage = findPage(dc, 0, 10);
 //
-//        return listByPage.getItems();
+//        return listByPage.getItemsMap();
 
 		return null;
 	}
