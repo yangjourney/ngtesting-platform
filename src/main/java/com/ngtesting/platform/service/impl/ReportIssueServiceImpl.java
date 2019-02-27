@@ -20,10 +20,8 @@ public class ReportIssueServiceImpl extends ReportServiceImpl implements ReportI
 
     @Override
     public Map<String, List<Object>> chartIssueTrend(Integer id, TstProject.ProjectType type, Integer numb) {
-        String projectIds = StringUtils.join(projectDao.listProjectId(id, type.toString()).toArray(),",");
-
-        List<Map> createLs = reportIssueDao.chartIssueTrendCreate(projectIds, numb);
-        List<Map> finalLs = reportIssueDao.chartIssueTrendFinal(projectIds, numb);
+        List<Map> createLs = reportIssueDao.chartIssueTrendCreate(id, type.toString(), numb);
+        List<Map> finalLs = reportIssueDao.chartIssueTrendFinal(id, type.toString(), numb);
 
         Map<String, List<Object>> map = new LinkedHashMap<>();
 
@@ -31,13 +29,13 @@ public class ReportIssueServiceImpl extends ReportServiceImpl implements ReportI
         List<Object> totalListCreate = new LinkedList<>();
         List<Object> totalListFinal = new LinkedList<>();
 
-        Integer countCreate = 0;
-        Integer countFinal = 0;
+        Integer countCreate = null;
+        Integer countFinal = null;
         for (int i = 0; i < createLs.size(); i++) {
             xList.add(createLs.get(i).get("date").toString());
 
-            countCreate += Integer.valueOf(createLs.get(i).get("numb").toString());
-            countFinal += Integer.valueOf(finalLs.get(i).get("numb").toString());
+            countCreate = Integer.valueOf(createLs.get(i).get("sum").toString());
+            countFinal = Integer.valueOf(finalLs.get(i).get("sum").toString());
 
             totalListCreate.add(countCreate);
             totalListFinal.add(countFinal);
@@ -51,20 +49,14 @@ public class ReportIssueServiceImpl extends ReportServiceImpl implements ReportI
 
     @Override
     public Map<String, List<Object>> chartIssueAgeByProject(Integer projectId, Integer numb, Integer orgId) {
-        String projectIdsString = projectId.toString();
-
-        List<Map> ls = reportIssueDao.chartIssueAge(projectIdsString, numb);
+        List<Map> ls = reportIssueDao.chartIssueAge(projectId, "project", numb);
 
         return countAgeByPriority(ls, numb, orgId, projectId);
     }
 
     @Override
     public Map<String, List<Object>> chartIssueAgeByOrgOrGroup(Integer id, TstProject.ProjectType type, Integer numb) {
-        List<Integer> projectIds = projectDao.listProjectId(id, type.toString());
-
-        String projectIdsString = StringUtils.join(projectIds.toArray(),",");
-
-        List<Map> ls = reportIssueDao.chartIssueAge(projectIdsString, numb);
+        List<Map> ls = reportIssueDao.chartIssueAge(id, type.toString(), numb);
 
         return countAge(ls, numb);
     }

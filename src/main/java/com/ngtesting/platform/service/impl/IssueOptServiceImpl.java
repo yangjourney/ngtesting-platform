@@ -1,15 +1,13 @@
 package com.ngtesting.platform.service.impl;
 
-import com.ngtesting.platform.config.Constant;
+import com.alibaba.fastjson.JSONObject;
 import com.ngtesting.platform.dao.IssueOptDao;
 import com.ngtesting.platform.dao.UserDao;
 import com.ngtesting.platform.model.IsuComments;
 import com.ngtesting.platform.model.IsuStatus;
 import com.ngtesting.platform.model.TstUser;
-import com.ngtesting.platform.service.intf.IssueCommentsService;
-import com.ngtesting.platform.service.intf.IssueHistoryService;
-import com.ngtesting.platform.service.intf.IssueOptService;
-import com.ngtesting.platform.service.intf.IssueStatusService;
+import com.ngtesting.platform.service.intf.*;
+import com.ngtesting.platform.utils.MsgUtil;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +16,11 @@ import org.springframework.stereotype.Service;
 @Service
 public class IssueOptServiceImpl extends BaseServiceImpl implements IssueOptService {
     Log logger = LogFactory.getLog(IssueOptServiceImpl.class);
+
+    @Autowired
+    IssueOptService issueOptService;
+    @Autowired
+    IssueService issueService;
 
     @Autowired
     IssueOptDao issueOptDao;
@@ -43,7 +46,7 @@ public class IssueOptServiceImpl extends BaseServiceImpl implements IssueOptServ
 
         issueOptDao.statusTran(id, dictStatusId, status.getFinalVal(), user.getDefaultPrjId());
 
-        issueHistoryService.saveHistory(user, Constant.EntityAct.changeStatus, id, dictStatusName);
+        issueHistoryService.saveHistory(user, MsgUtil.MsgAction.changeStatus, id, dictStatusName);
     }
 
     @Override
@@ -55,7 +58,21 @@ public class IssueOptServiceImpl extends BaseServiceImpl implements IssueOptServ
 
         TstUser u = userDao.get(userId);
 
-        issueHistoryService.saveHistory(user, Constant.EntityAct.assign, id, u.getNickname());
+        issueHistoryService.saveHistory(user, MsgUtil.MsgAction.assign, id, u.getNickname());
+    }
+
+    @Override
+    public void updateThenStatusTran(JSONObject json, TstUser user) {
+        JSONObject issue = json.getJSONObject("issue");
+        Integer id = issue.getInteger("id");
+
+        JSONObject tran = json.getJSONObject("tran");
+        Integer pageId = tran.getInteger("actionPageId");
+        Integer dictStatusId = tran.getInteger("dictStatusId");
+        String dictStatusName = tran.getString("dictStatusName");
+
+        issueService.update(issue, pageId, user);
+        issueOptService.statusTran(id, dictStatusId, dictStatusName, user);
     }
 
 }

@@ -1,49 +1,53 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 
-<mapper namespace="com.ngtesting.platform.dao.OrgRoleDao" >
+<mapper namespace="com.ngtesting.platform.dao.OrgRoleDao">
 
     <select id="query" resultType="TstOrgRole">
-        SELECT * FROM TstOrgRole role
+        SELECT * FROM "TstOrgRole" role
 
         WHERE TRUE
         <if test="keywords != null and keywords != ''">
-            AND role.name LIKE CONCAT('%','${keywords}','%' )
+            AND role.name LIKE '%${keywords}%'
         </if>
         <if test="disabled != null">
             AND role.disabled = #{disabled}
         </if>
 
-        AND role.orgId = #{orgId}
-        AND role.deleted != TRUE
+        AND role."orgId" = #{orgId}
+        AND NOT role.deleted
         ORDER BY role.id ASC
     </select>
 
     <select id="get" resultType="TstOrgRole">
-        SELECT * FROM TstOrgRole role
-        WHERE role.id = #{id} AND role.orgId = #{orgId}
+        SELECT *
+        FROM "TstOrgRole" role
+        WHERE role.id = #{id}
+          AND role."orgId" = #{orgId}
     </select>
 
     <insert id="save" parameterType="TstOrgRole" useGeneratedKeys="true" keyProperty="id">
-        insert into TstOrgRole
-        (code,name,orgId,buildIn,deleted,disabled,createTime)
-        values
-        (#{code},#{name},#{orgId},#{buildIn},FALSE,FALSE,NOW())
+        insert into "TstOrgRole" (code, name, "orgId", "buildIn", deleted, disabled, "createTime")
+        values (#{code}, #{name}, #{orgId}, #{buildIn}, FALSE, #{disabled}, NOW())
     </insert>
 
     <update id="update" parameterType="TstOrgRole">
-        UPDATE TstOrgRole
-        SET name=#{name},
-        disabled=#{disabled},
-        updateTime=NOW()
+        UPDATE "TstOrgRole"
+        SET name = #{name},
+            descr = #{descr},
+            disabled = #{disabled},
+            "updateTime" = NOW()
 
-        WHERE id=#{id} AND orgId=#{orgId}
+        WHERE id = #{id}
+          AND "orgId" = #{orgId}
     </update>
 
     <delete id="delete" parameterType="TstOrgRole">
-        UPDATE TstOrgRole
-        SET deleted=TRUE, updateTime=NOW()
-        WHERE id=#{id} AND orgId=#{orgId}
+        UPDATE "TstOrgRole"
+        SET deleted      = TRUE,
+            "updateTime" = NOW()
+        WHERE id = #{id}
+          AND "orgId" = #{orgId}
     </delete>
 
 </mapper>

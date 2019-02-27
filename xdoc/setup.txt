@@ -1,8 +1,14 @@
 mvn clean verify
 
-docker-compose pull
+docker-compose stop
 docker rm -f `docker ps -a -q`
-docker-compose up -d
+docker-compose pull;
+docker-compose up -d;
 docker-compose logs -f
 
-docker rmi `docker images -q`
+docker image prune
+docker rmi -f `docker images -q`
+
+docker build -f Dockerfile-Base --rm -t registry.cn-shanghai.aliyuncs.com/ngtesting/ngtesting-web-base:2.0.0 .
+docker push registry.cn-shanghai.aliyuncs.com/ngtesting/ngtesting-web-base:2.0.0
+

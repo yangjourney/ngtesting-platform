@@ -17,15 +17,19 @@ public interface ProjectDao {
     TstProject get(@Param("id") Integer id);
     void delete(@Param("id") Integer id, @Param("userId") Integer userId);
 
-    void genHistory(@Param("orgId") Integer orgId, @Param("userId") Integer userId,
-                    @Param("prjId") Integer prjId, @Param("prjName") String prjName);
+    void genHistory(@Param("orgId") Integer orgId,
+                    @Param("prjId") Integer prjId,
+                    @Param("prjName") String prjName,
+                    @Param("userId") Integer userId);
 
     List<TstProjectAccessHistory> listRecent(@Param("orgId") Integer orgId, @Param("userId") Integer userId);
 
     Integer isLastestProjectGroup(@Param("orgId") Integer orgId, @Param("projectGroupId") Integer projectGroupId);
 
     List<TstProject> getProjectsByOrg(@Param("orgId") Integer orgId);
-    List<TstProject> listProjectGroups(@Param("orgId") Integer orgId);
+
+    List<TstProject> listProjectGroups(@Param("orgId") Integer orgId,
+                                       @Param("groupId") Integer groupId);
 
     void save(TstProject vo);
     void update(TstProject vo);

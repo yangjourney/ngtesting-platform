@@ -108,8 +108,8 @@ public class CustomFieldServiceImpl extends BaseServiceImpl implements CustomFie
         List<String> ls = customFieldDao.getLastUnusedColumn(orgId);
 
         String ret = null;
-        for (int i = 1; i <= 20; i++) {
-            String prop = "prop" + String.format("%02d", i);
+        for (int i = 1; i <= 1000; i++) {
+            String prop = "prop" + String.format("%03d", i);
             if (!ls.contains(prop)) {
                 ret = prop;
                 break;
@@ -125,12 +125,12 @@ public class CustomFieldServiceImpl extends BaseServiceImpl implements CustomFie
         List<TstCasePriority> casePriorities = casePriorityDao.list(orgId);
 
         Map<String, Object> map = new HashMap<>();
-        map.put("type", caseTypes);
-        map.put("priority", casePriorities);
+        map.put("typeId", caseTypes);
+        map.put("priorityId", casePriorities);
 
-        List<Map> fields = customFieldDao.listForCase(orgId);
-        for (Map field : fields) {
-            map.put(field.get("colCode").toString(), field.get("options"));
+        List<CustomField> fields = customFieldDao.listForCase(orgId);
+        for (CustomField field : fields) {
+            map.put(field.getColCode(), field.getOptions());
         }
 
         Map<String, Object> ret = new HashMap<>();

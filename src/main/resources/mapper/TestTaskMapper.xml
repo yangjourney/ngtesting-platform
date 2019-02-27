@@ -1,104 +1,123 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
-<mapper namespace="com.ngtesting.platform.dao.TestTaskDao" >
+<mapper namespace="com.ngtesting.platform.dao.TestTaskDao">
 
     <select id="listByPlan" resultMap="taskMap">
         SELECT task.*,
-          usr.nickname userName,
-          project.name projectName,
-          caseProject.name caseProjectName,
-          env.label envName
+               usr.nickname       "userName",
+               project.name       "projectName",
+               "caseProject".name "caseProjectName",
+               env.label          "envName"
 
-        FROM TstTask task
+        FROM "TstTask" task
+                 JOIN "TstUser" usr ON task."userId" = usr.id
+                 JOIN "TstProject" project ON task."projectId" = project.id
+                 LEFT JOIN "TstProject" "caseProject" ON task."caseProjectId" = "caseProject".id
+                 LEFT JOIN "TstEnv" env ON task."envId" = env.id
 
-        JOIN TstUser usr ON task.userId = usr.id
-        JOIN TstProject project ON task.projectId = project.id
-        LEFT JOIN TstProject caseProject ON task.caseProjectId = caseProject.id
-        LEFT JOIN TstEnv env ON task.envId = env.id
-
-        WHERE task.planId=#{planId}
-        AND task.deleted != TRUE AND task.disabled != TRUE
-        ORDER BY task.createTime ASC
+        WHERE task."planId" = #{planId}
+          AND NOT task.deleted
+          AND NOT task.disabled
+        ORDER BY task."createTime" ASC
     </select>
 
     <select id="getDetail" resultMap="taskMap">
         SELECT task.*,
---         usr.nickname userName,
-        project.name projectName,
-        caseProject.name caseProjectName,
-        env.label envName
---         assignee.id assigneeId, assignee.nickname assigneeNickname, assignee.avatar assigneeAvatar
+        usr.nickname userName, -- 保存后需要显示用户信息
+        project.name "projectName",
+        "caseProject".name "caseProjectName",
+        env.label "envName"
+        -- assignee.id assigneeId, assignee.nickname assigneeNickname, assignee.avatar assigneeAvatar
 
-        FROM TstTask task
+        FROM "TstTask" task
 
---         LEFT JOIN TstUser usr ON task.userId = usr.id
-        LEFT JOIN TstProject project ON task.projectId = project.id
-        LEFT JOIN TstProject caseProject ON task.caseProjectId = caseProject.id
-        LEFT JOIN TstEnv env ON task.envId = env.id
+        LEFT JOIN "TstUser" usr ON task."userId" = usr.id
+        LEFT JOIN "TstProject" project ON task."projectId" = project.id
+        LEFT JOIN "TstProject" "caseProject" ON task."caseProjectId" = "caseProject".id
+        LEFT JOIN "TstEnv" env ON task."envId" = env.id
 
---         LEFT JOIN TstTaskAssigneeRelation r on r.taskId = task.id
---         LEFT JOIN TstUser assignee on r.assigneeId = assignee.id
+        -- LEFT JOIN TstTaskAssigneeRelation r on r.taskId = task.id
+        -- LEFT JOIN TstUser assignee on r.assigneeId = assignee.id
 
         WHERE task.id=#{id}
         <if test="projectId != null">
-            AND task.projectId=#{projectId}
+            AND task."projectId"=#{projectId}
         </if>
     </select>
 
     <select id="get" resultType="TstTask">
-        SELECT task.*  FROM TstTask task
-        WHERE task.id=#{id}
+        SELECT task.*
+        FROM "TstTask" task
+        WHERE task.id = #{id}
     </select>
     <select id="listAssigneeIds" resultType="Integer">
-        SELECT r.assigneeId  FROM TstTaskAssigneeRelation r
-        WHERE r.taskId=#{id}
+        SELECT r."assigneeId"
+        FROM "TstTaskAssigneeRelation" r
+        WHERE r."taskId" = #{id}
     </select>
 
     <select id="listCaseIds" resultType="int">
-        SELECT o.caseId
-        FROM TstCaseInTask o
+        SELECT o."caseId"
+        FROM "TstCaseInTask" o
 
-        WHERE o.taskId=#{id}
-        AND o.deleted != TRUE AND o.disabled != TRUE
-        ORDER BY o.pId, o.id
+        WHERE o."taskId" = #{id}
+          AND NOT o.deleted
+          AND NOT o.disabled
+        ORDER BY o."pId", o.id
     </select>
 
     <insert id="save" parameterType="TstTask" useGeneratedKeys="true" keyProperty="id">
-        insert into TstTask
-        (name,status,projectId,caseProjectId,planId,envId,userId,
-          deleted,disabled,createTime)
-        values
-        (#{name},#{status},#{projectId},#{caseProjectId},#{planId},#{envId},#{userId},
-          FALSE,FALSE,NOW())
+        insert into "TstTask" (name,
+                               status,
+                               "projectId",
+                               "caseProjectId",
+                               "planId",
+                               "envId",
+                               "userId",
+                               deleted,
+                               disabled,
+                               "createTime")
+        values (#{name}, #{status}, #{projectId}, #{caseProjectId}, #{planId}, #{envId}, #{userId}, FALSE, FALSE, NOW())
     </insert>
 
     <update id="update" parameterType="TstTask">
-        UPDATE TstTask
-        SET name=#{name},envId=#{envId},
-        updateTime=NOW()
+        UPDATE "TstTask"
+        SET name = #{name},
+            "envId" = #{envId},
+            "updateTime" = NOW()
 
-        WHERE id=#{id} AND projectId=#{projectId}
+        WHERE id = #{id}
+          AND "projectId" = #{projectId}
     </update>
     <update id="updateCaseProject">
-        UPDATE TstTask SET caseProjectId=#{caseProjectId}, updateTime=NOW()
-        WHERE id=#{id}
+        UPDATE "TstTask"
+        SET "caseProjectId" = #{caseProjectId},
+            "updateTime" = NOW()
+        WHERE id = #{id}
     </update>
 
     <delete id="delete">
-        UPDATE TstTask SET deleted=TRUE, updateTime=NOW()
-        WHERE id=#{id} AND projectId=#{projectId}
+        UPDATE "TstTask"
+        SET deleted      = TRUE,
+            "updateTime" = NOW()
+        WHERE id = #{id}
+          AND "projectId" = #{projectId}
     </delete>
     <delete id="close">
-        UPDATE TstTask SET status='end', updateTime=NOW()
-        WHERE id=#{id} AND projectId=#{projectId}
+        UPDATE "TstTask"
+        SET status       = 'end',
+            "updateTime" = NOW()
+        WHERE id = #{id}
+          AND "projectId" = #{projectId}
     </delete>
 
     <delete id="removeAssignees">
-        DELETE FROM TstTaskAssigneeRelation
-        WHERE taskId = #{id}
+        DELETE
+        FROM "TstTaskAssigneeRelation"
+        WHERE "taskId" = #{id}
     </delete>
     <insert id="saveAssignees">
-        insert into TstTaskAssigneeRelation (taskId,assigneeId)
+        insert into "TstTaskAssigneeRelation" ("taskId","assigneeId")
         values
         <foreach collection="list" item="item" separator=",">
             (#{id},#{item.id})
@@ -106,51 +125,55 @@
     </insert>
 
     <update id="addCasesBySuites" statementType="CALLABLE">
-        { call add_cases_to_task_by_suites(
-              #{taskId,mode=IN,jdbcType=INTEGER},
-              #{suiteIds,mode=IN,jdbcType=VARCHAR}
-        ) }
+        {call add_cases_to_task_by_suites(
+                #{suiteIds,mode=IN,jdbcType=VARCHAR},
+                #{taskId,mode=IN,jdbcType=INTEGER}
+        )}
     </update>
     <update id="addCases" statementType="CALLABLE">
-        { call add_cases_to_task(
-            #{taskId,mode=IN,jdbcType=INTEGER},
-            #{caseIds,mode=IN,jdbcType=VARCHAR},
-            #{append,mode=IN,jdbcType=BOOLEAN}
-        ) }
+        {call add_cases_to_task(
+                #{caseIds,mode=IN,jdbcType=VARCHAR},
+                #{taskId,mode=IN,jdbcType=INTEGER}
+        )}
     </update>
 
     <update id="start">
-        UPDATE TstTask o
-        SET o.status = 'in_progress'
-        WHERE o.id=#{id} AND o.status != 'in_progress'
+        UPDATE "TstTask"
+        SET status = 'in_progress'
+        WHERE id = #{id}
+          AND status != 'in_progress'
     </update>
 
     <select id="countStatus" resultType="map">
-       select tcin.`status` status, count(tcin.id) `count`
-       from TstCaseInTask tcin
-       where tcin.taskId = #{id}
-        AND tcin.deleted != true AND tcin.disabled != true AND tcin.isLeaf = true
-       group by tcin.`status`
+        select tcin."status" status, count(tcin.id) "count"
+        from "TstCaseInTask" tcin
+        where tcin."taskId" = #{id}
+          AND NOT tcin.deleted
+          AND NOT tcin.disabled
+          AND NOT tcin."isParent"
+        group by tcin."status"
     </select>
 
-    <resultMap id="taskMap" type="TstTask" autoMapping="true">
+    <resultMap id="taskMap" type="com.ngtesting.platform.model.TstTask" autoMapping="true">
         <id column="id" property="id"/>
 
         <collection property="assignees" select="listAssigneesByTaskId"
                     column="{id=id}">
         </collection>
     </resultMap>
+
     <select id="listAssigneesByTaskId" parameterType="Map" resultMap="assigneeMap">
-        SELECT o.* FROM TstUser o
+        SELECT o.id, o.nickname
+        FROM "TstUser" o
+                 LEFT JOIN "TstTaskAssigneeRelation" r on r."assigneeId" = o.id
 
-        LEFT JOIN TstTaskAssigneeRelation r on r.assigneeId = o.id
-
-        WHERE r.taskId = #{id}
-        AND o.deleted != true AND o.disabled != true
+        WHERE r."taskId" = #{id}
+          AND NOT o.deleted
+          AND NOT o.disabled
 
         ORDER BY o.id ASC
     </select>
-    <resultMap id="assigneeMap" type="TstUser" autoMapping="true">
+    <resultMap id="assigneeMap" type="java.util.Map" autoMapping="true">
         <id column="id" property="id"/>
         <id column="nickname" property="nickname"/>
     </resultMap>

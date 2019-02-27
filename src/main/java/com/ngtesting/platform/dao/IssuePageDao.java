@@ -7,10 +7,13 @@ import java.util.List;
 
 public interface IssuePageDao {
 
-    List<IsuPage> list(Integer orgId);
+    List<IsuPage> listAll(Integer orgId);
+    List<IsuPage> listForWorkflowTran(Integer orgId);
 
     IsuPage get(@Param("id") Integer id,
                 @Param("orgId") Integer orgId);
+
+    IsuPage getDefault(@Param("orgId") Integer orgId);
 
     void save(IsuPage vo);
 

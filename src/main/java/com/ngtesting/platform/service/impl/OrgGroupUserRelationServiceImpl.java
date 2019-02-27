@@ -94,7 +94,7 @@ public class OrgGroupUserRelationServiceImpl extends BaseServiceImpl implements 
 	}
     @Override
     public List<TstUser> listAllOrgUsers(Integer orgId) {
-        List<TstUser> ls = userService.search(orgId, null, null);
+        List<TstUser> ls = userService.searchOrgUser(orgId, null, null);
 
         return ls;
     }
@@ -102,7 +102,7 @@ public class OrgGroupUserRelationServiceImpl extends BaseServiceImpl implements 
 	@Override
     @Transactional
 	public boolean saveRelationsForUser(Integer orgId, Integer userId, List<TstOrgGroupUserRelation> orgGroupUserRelation) {
-		if (orgGroupUserRelation == null) {
+		if (orgGroupUserRelation == null || orgGroupUserRelation.size() == 0) {
             return false;
         }
 

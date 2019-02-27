@@ -7,7 +7,7 @@ import com.ngtesting.platform.model.TstHistory;
 import com.ngtesting.platform.model.TstOrg;
 import com.ngtesting.platform.model.TstPlan;
 import com.ngtesting.platform.model.TstUser;
-import com.ngtesting.platform.service.intf.HistoryService;
+import com.ngtesting.platform.service.intf.ProjectHistoryService;
 import com.ngtesting.platform.service.intf.OrgService;
 import com.ngtesting.platform.service.intf.TestPlanService;
 import com.ngtesting.platform.servlet.PrivOrg;
@@ -33,7 +33,7 @@ public class OrgAction extends BaseAction {
 	@Autowired
     TestPlanService planService;
 	@Autowired
-    HistoryService historyService;
+    ProjectHistoryService historyService;
 
 	@RequestMapping(value = "view", method = RequestMethod.POST)
 	@ResponseBody
@@ -43,7 +43,7 @@ public class OrgAction extends BaseAction {
 		TstUser user = (TstUser) request.getSession().getAttribute(Constant.HTTP_SESSION_USER_PROFILE);
 		Integer orgId = json.getInteger("orgId");
 
-		TstOrg po = orgService.get(orgId);
+		TstOrg po = orgService.get(orgId, user);
 
 		List<TstPlan> planPos = planService.listByOrg(orgId);
 		planService.genVos(planPos);
@@ -71,6 +71,7 @@ public class OrgAction extends BaseAction {
 		orgService.changeDefaultOrg(user, orgId); // 涵盖项目设置WS推送消息
 
 		ret.put("code", Constant.RespCode.SUCCESS.getCode());
+		ret.put("projectId", user.getDefaultPrjId());
 
 		return ret;
 	}

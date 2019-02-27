@@ -12,6 +12,8 @@ public interface IssueWorkflowDao {
     IsuWorkflow get(@Param("id") Integer id,
                 @Param("orgId") Integer orgId);
 
+    IsuWorkflow getDefault(Integer orgId);
+
     Integer save(IsuWorkflow vo);
     Integer update(IsuWorkflow vo);
     Integer delete(@Param("id") Integer id,
@@ -21,17 +23,14 @@ public interface IssueWorkflowDao {
     Integer setDefault(@Param("id") Integer id,
                        @Param("orgId") Integer orgId);
 
-    List<IsuStatus> listStatus(@Param("id") Integer id);
+    List<IsuStatus> listStatus(@Param("workflowId") Integer workflowId);
 
-    void removeTransitions(@Param("workflowId") Integer workflowId,
-                           @Param("statusIds") String statusIds,
-                           @Param("orgId") Integer orgId);
-
-    void removeStatuses(@Param("workflowId") Integer workflowId,
-                        @Param("statusIds") String statusIds,
-                        @Param("orgId") Integer orgId);
+    void removeStatuses(@Param("workflowId") Integer workflowId);
 
     void saveStatuses(@Param("workflowId") Integer workflowId,
                       @Param("statusIds") List<Integer> statusIds,
                       @Param("orgId") Integer orgId);
+
+//    void updateStatuses(@Param("workflowId") Integer workflowId,
+//                        @Param("statusIds") String str);
 }

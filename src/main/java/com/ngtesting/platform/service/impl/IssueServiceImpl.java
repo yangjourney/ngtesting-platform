@@ -1,7 +1,6 @@
 package com.ngtesting.platform.service.impl;
 
 import com.alibaba.fastjson.JSONObject;
-import com.ngtesting.platform.config.Constant;
 import com.ngtesting.platform.dao.IssueDao;
 import com.ngtesting.platform.dao.IssuePageDao;
 import com.ngtesting.platform.dao.IssuePageElementDao;
@@ -9,6 +8,9 @@ import com.ngtesting.platform.model.*;
 import com.ngtesting.platform.service.intf.IssueCommentsService;
 import com.ngtesting.platform.service.intf.IssueHistoryService;
 import com.ngtesting.platform.service.intf.IssueService;
+import com.ngtesting.platform.service.intf.MsgService;
+import com.ngtesting.platform.utils.CustomFieldUtil;
+import com.ngtesting.platform.utils.MsgUtil;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +35,18 @@ public class IssueServiceImpl extends BaseServiceImpl implements IssueService {
     IssuePageElementDao pageElementDao;
     @Autowired
     IssueCommentsService issueCommentsService;
+
+    @Autowired
+    IssueService issueService;
+    @Autowired
+    MsgService msgService;
+
+    @Override
+    public IsuIssue get(Integer id) {
+        IsuIssue po = issueDao.getById(id);
+
+        return po;
+    }
 
     @Override
 	public IsuIssue get(Integer id, Integer userId, Integer prjId) {
@@ -68,36 +82,22 @@ public class IssueServiceImpl extends BaseServiceImpl implements IssueService {
     @Transactional
     public IsuIssue save(JSONObject issue, Integer pageId, TstUser user) {
         List<IsuPageElement> elemObjs = pageElementDao.listElementByPageId(pageId);
-        List<IsuPageElement> elems = genElems(elemObjs);
+        List<IsuPageElement> elems = genElems(elemObjs, true);
 
         String uuid = UUID.randomUUID().toString().replace("-", "");
         issue.put("uuid", uuid);
 
-        List<Object> params = genParams(issue, elems, true);
+        List<Object> params = genParams(issue, elemObjs, user, true);
 
-        List<IsuPageElement> elems1 = new LinkedList<>();
-        List<Object> params1 = new LinkedList<>();
-        List<IsuPageElement> elems2 = new LinkedList<>();
-        List<Object> params2 = new LinkedList<>();
-
-        genDataForExtTable(elems, params, elems1, params1, elems2, params2);
-
-        Integer count = issueDao.save(elems1, params1);
+        Integer count = issueDao.save(elems, params);
         IsuIssue po = null;
         if (count > 0) {
             po = issueDao.getByUuid(uuid);
-            count = issueDao.saveExt(elems2, params2, po.getId());
 
-            po.setCreatorId(user.getId());
-            po.setOrgId(user.getDefaultOrgId());
-            po.setProjectId(user.getDefaultPrjId());
-            issueDao.setDefaultVal(po);
-        }
+            msgService.createForIssue(user, po, MsgUtil.HistoryMsgTemplate.create_issue,
+                    user.getNickname(), po.getTitle());
 
-        issueHistoryService.saveHistory(user, Constant.EntityAct.create, po.getId(),null);
-
-        if (count > 0) {
-            po = issueDao.get(po.getId(), user.getId(), user.getDefaultPrjId());
+            issueHistoryService.saveHistory(user, MsgUtil.MsgAction.create, po.getId(),null);
         }
 
         return po;
@@ -106,24 +106,19 @@ public class IssueServiceImpl extends BaseServiceImpl implements IssueService {
     @Override
     @Transactional
     public Boolean update(JSONObject issue, Integer pageId, TstUser user) {
-        List<IsuPageElement> elems = pageElementDao.listElementByPageId(pageId);
+        Integer id = issue.getInteger("id");
+        List<IsuPageElement> elemObjs = pageElementDao.listElementByPageId(pageId);
+        List<IsuPageElement> elems = genElems(elemObjs, false);
 
-        IsuIssue po = null;
-        List<Object> params = genParams(issue, elems, false);
+        List<Object> params = genParams(issue, elemObjs, user, false);
 
-        List<IsuPageElement> elems1 = new LinkedList<>();
-        List<Object> params1 = new LinkedList<>();
-        List<IsuPageElement> elems2 = new LinkedList<>();
-        List<Object> params2 = new LinkedList<>();
+        Integer count = issueDao.update(elems, params, id, user.getDefaultPrjId());
 
-        genDataForExtTable(elems, params, elems1, params1, elems2, params2);
+        IsuIssue po = issueService.get(id);
+        msgService.createForIssue(user, po, MsgUtil.HistoryMsgTemplate.update_issue,
+                user.getNickname(), po.getTitle());
 
-        Integer count = issueDao.update(elems1, params1, issue.getInteger("id"), user.getDefaultOrgId());
-        if (count > 0 && params2.size() > 0) {
-            count = issueDao.updateExt(elems2, params2, issue.getInteger("id"));
-        }
-
-        issueHistoryService.saveHistory(user, Constant.EntityAct.update, issue.getInteger("id"),null);
+        issueHistoryService.saveHistory(user, MsgUtil.MsgAction.update, id,null);
 
         return count > 0;
     }
@@ -135,55 +130,87 @@ public class IssueServiceImpl extends BaseServiceImpl implements IssueService {
 
         Integer id = json.getInteger("id");
         String code = json.getString("code");
-        String value = json.getString("value");
+        String name = json.getString("name");
+        Boolean buildIn = json.getBoolean("buildIn");
         String label = json.getString("label");
+        String type = json.getString("type");
 
-        Integer count;
-        if (!code.startsWith("prop")) {
+        Object value = CustomFieldUtil.GetFieldVal(type, json);
+
+        Integer count = 0;
+        if (buildIn) {
             count = issueDao.updateProp(id, code, value, projectId);
         } else {
-            count = issueDao.updatePropExt(id, code, value);
+            count = issueDao.updateExtProp(id, code, value, projectId);
         }
         if (count == 0) {
             return null;
         }
 
-        issueHistoryService.saveHistory(user, Constant.EntityAct.update, id, label);
-        IsuIssue po = issueDao.get(id, user.getId(), user.getDefaultPrjId());
+        IsuIssue po = issueService.get(id);
+        msgService.createForIssue(user, po, MsgUtil.HistoryMsgTemplate.update_issue_field,
+                user.getNickname(), po.getTitle(), name);
+
+        issueHistoryService.saveHistory(user, MsgUtil.MsgAction.update, id, label);
 
         return po;
     }
 
-    private List<IsuPageElement> genElems(List<IsuPageElement> elemObjs) {
+    private List<IsuPageElement> genElems(List<IsuPageElement> elemObjs, Boolean isNew) {
         List<IsuPageElement> elems = new LinkedList<>();
         for (IsuPageElement elem : elemObjs) {
-            elems.add(elem);
+            if (elem.getBuildIn()) {
+                elems.add(elem);
+            }
         }
 
-        elems.add(new IsuPageElement("uuid", ""));
+        elems.add(new IsuPageElement("extProp", "", true));
+        if (isNew) {
+            elems.add(new IsuPageElement("orgId", "", true));
+            elems.add(new IsuPageElement("projectId", "", true));
+            elems.add(new IsuPageElement("creatorId", "", true));
+            elems.add(new IsuPageElement("uuid", "", true));
+        }
 
         return elems;
     }
 
-    private List genParams(JSONObject issue, List<IsuPageElement> elems, Boolean isSave) {
+    private List genParams(JSONObject issue, List<IsuPageElement> elems, TstUser user, Boolean isNew) {
         List<Object> params = new LinkedList<>();
+        JSONObject jsonb = new JSONObject();
 
         int i = 0;
         for (IsuPageElement elem : elems) {
             String code = elem.getColCode();
 
-            switch(elem.getInput()){
+            Object param;
+            switch(elem.getType()){
                 case "date":
-                    params.add(issue.get(code)!=null?issue.getDate(code): null);
+                    param = issue.get(code)!=null?issue.getDate(code): null;
                     break;
-
+                case "string":
+                    param = issue.get(code)!=null?issue.getString(code): null;
+                    break;
+                case "integer":
+                    param = issue.get(code)!=null?issue.getInteger(code): null;
+                    break;
                 default:
-                    params.add(issue.get(code));
+                    param = issue.get(code);
                     break;
+            }
+
+            if (elem.getBuildIn() != null && elem.getBuildIn()) {
+                params.add(param);
+            } else {
+                jsonb.put(code, param);
             }
         }
 
-        if (isSave) {
+        params.add("'" + jsonb.toJSONString() + "'::JSON");
+        if (isNew) {
+            params.add(user.getDefaultOrgId());
+            params.add(user.getDefaultPrjId());
+            params.add(user.getId());
             params.add(issue.getString("uuid"));
         }
 
@@ -205,27 +232,6 @@ public class IssueServiceImpl extends BaseServiceImpl implements IssueService {
             ret.put(map.get("opt").toString(), Integer.valueOf(map.get("pageId").toString()));
         }
         return ret;
-    }
-
-    @Override
-    public void genDataForExtTable(List<IsuPageElement> elems,
-                                   List<Object> params,
-                                   List<IsuPageElement> elems1,
-                                   List<Object> params1,
-                                   List<IsuPageElement> elems2,
-                                   List<Object> params2) {
-        int i = 0;
-        for (IsuPageElement elem: elems) {
-            if (!elem.getColCode().startsWith("prop")) {
-                elems1.add(elem);
-                params1.add(params.get(i));
-            } else {
-                elems2.add(elem);
-                params2.add(params.get(i));
-            }
-
-            i++;
-        }
     }
 
     @Override

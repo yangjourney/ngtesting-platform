@@ -1,4 +1,6 @@
 /target/
+/postgres-data/
+/src/main/resources/static/my-mind/
 
 ### STS ###
 .apt_generated
@@ -24,4 +26,4 @@
 /.nb-gradle/
 /logs/
 /.mvn/
-/src/main/resources/static/my-mind/
+/mvnw*

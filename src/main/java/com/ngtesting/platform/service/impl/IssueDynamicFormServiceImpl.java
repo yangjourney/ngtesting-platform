@@ -6,10 +6,7 @@ import com.ngtesting.platform.service.intf.IssueDynamicFormService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class IssueDynamicFormServiceImpl extends BaseServiceImpl implements IssueDynamicFormService {
@@ -21,6 +18,20 @@ public class IssueDynamicFormServiceImpl extends BaseServiceImpl implements Issu
         List<IsuField> fields = dynamicFormDao.listNotUsedField(orgId, projectId, pageId, "elem");
 
         return fields;
+    }
+
+    @Override
+    public List<String> listCustomaField(Integer orgId, Integer projectId) {
+        List<Map> fields = fetchOrgField(orgId, projectId, "elem");
+
+        List<String> customFields = new ArrayList<>();
+        for (Map field : fields) {
+            if (!Boolean.valueOf(field.get("buildIn").toString())) {
+                customFields.add(field.get("colCode").toString());
+            }
+        }
+
+        return customFields;
     }
 
     @Override
@@ -43,13 +54,13 @@ public class IssueDynamicFormServiceImpl extends BaseServiceImpl implements Issu
         List<Map> fields = fetchOrgField(orgId, projectId, "elem");
 
 		for (Map field : fields) {
-		    if (!"1".equals(field.get("buildIn").toString()) || field.get("options") == null) {
+		    if (field.get("options") == null) {
                 continue;
             }
 
             Map optionMap = new LinkedHashMap();
             for (Map option: (List<Map>)field.get("options")) {
-                    optionMap.put(option.get("id"), option.get("label"));
+                    optionMap.put(option.get("id").toString(), option.get("label"));
             }
 			map.put(field.get("colCode").toString(), optionMap);
 		}

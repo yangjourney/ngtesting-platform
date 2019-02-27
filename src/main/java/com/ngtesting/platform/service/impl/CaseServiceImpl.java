@@ -2,19 +2,12 @@ package com.ngtesting.platform.service.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.ngtesting.platform.config.Constant;
-import com.ngtesting.platform.dao.CaseDao;
-import com.ngtesting.platform.dao.CaseStepDao;
-import com.ngtesting.platform.dao.TestSuiteDao;
-import com.ngtesting.platform.dao.TestTaskDao;
-import com.ngtesting.platform.model.TstCase;
-import com.ngtesting.platform.model.TstCaseComments;
-import com.ngtesting.platform.model.TstCaseStep;
-import com.ngtesting.platform.model.TstUser;
-import com.ngtesting.platform.service.intf.CaseCommentsService;
-import com.ngtesting.platform.service.intf.CaseHistoryService;
-import com.ngtesting.platform.service.intf.CaseService;
+import com.ngtesting.platform.dao.*;
+import com.ngtesting.platform.model.*;
+import com.ngtesting.platform.service.intf.*;
 import com.ngtesting.platform.utils.BeanUtilEx;
+import com.ngtesting.platform.utils.CustomFieldUtil;
+import com.ngtesting.platform.utils.MsgUtil;
 import com.ngtesting.platform.utils.StringUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -42,7 +35,17 @@ public class CaseServiceImpl extends BaseServiceImpl implements CaseService {
     public static List<String> ExtPropList;
 
     @Autowired
+    CasePriorityService casePriorityService;
+
+    @Autowired
+    CaseTypeService caseTypeService;
+
+    @Autowired
     CaseHistoryService caseHistoryService;
+    @Autowired
+    CustomFieldDao customFieldDao;
+    @Autowired
+    AuthDao authDao;
 
 	@Override
 	public List<TstCase> query(Integer projectId) {
@@ -81,23 +84,24 @@ public class CaseServiceImpl extends BaseServiceImpl implements CaseService {
     public TstCase rename(JSONObject json, TstUser user) {
         Integer id = json.getInteger("id");
         String name = json.getString("name");
+        Boolean isParent = json.getBoolean("isParent");
         Integer pId = json.getInteger("pId");
 
         Integer projectId = user.getDefaultPrjId();
 
-        return rename(id, name, pId, projectId, user);
+        return rename(id, name, isParent, pId, projectId, user);
     }
 
 	@Override
     @Transactional
-	public TstCase rename(Integer id, String name, Integer pId, Integer projectId, TstUser user) {
+	public TstCase rename(Integer id, String name, Boolean isParent, Integer pId, Integer projectId, TstUser user) {
         TstCase po = new TstCase();
-        Constant.EntityAct action;
+        MsgUtil.MsgAction action;
 
         boolean isNew;
         if (id != null && id > 0) {
             isNew = false;
-            action = Constant.EntityAct.rename;
+            action = MsgUtil.MsgAction.rename;
             po = caseDao.get(id, projectId);
             if(po == null) {
                 return null;
@@ -106,16 +110,15 @@ public class CaseServiceImpl extends BaseServiceImpl implements CaseService {
             po.setUpdateById(user.getId());
         } else {
             isNew = true;
-            action = Constant.EntityAct.create;
+            action = MsgUtil.MsgAction.create;
 
-            po.setLeaf(true);
+            po.setIsParent(isParent);
             po.setId(null);
             po.setpId(pId);
             po.setOrdr(getChildMaxOrderNumb(po.getpId()));
 
             po.setProjectId(projectId);
             po.setCreateById(user.getId());
-            action = Constant.EntityAct.create;
         }
         po.setName(name);
         po.setReviewResult(null);
@@ -123,7 +126,7 @@ public class CaseServiceImpl extends BaseServiceImpl implements CaseService {
         if (isNew) {
             caseDao.renameNew(po);
             caseDao.setDefaultVal(po.getId(), user.getDefaultOrgId());
-            caseDao.updateParentIfNeeded(po.getpId());
+//            caseDao.updateParentIfNeeded(po.getpId());
         } else {
             caseDao.renameUpdate(po);
         }
@@ -155,10 +158,10 @@ public class CaseServiceImpl extends BaseServiceImpl implements CaseService {
         Integer srcParentId = src.getpId();
 
         TstCase testCase;
-        Constant.EntityAct action;
+        MsgUtil.MsgAction action;
 
         if (isCopy) {
-            action = Constant.EntityAct.copy;
+            action = MsgUtil.MsgAction.copy;
 
             testCase = new TstCase();
             BeanUtilEx.copyProperties(src, testCase);
@@ -166,7 +169,7 @@ public class CaseServiceImpl extends BaseServiceImpl implements CaseService {
 
             testCase.setCreateById(user.getId());
         } else {
-            action = Constant.EntityAct.move;
+            action = MsgUtil.MsgAction.move;
             testCase = src;
             testCase.setUpdateById(user.getId());
         }
@@ -193,12 +196,12 @@ public class CaseServiceImpl extends BaseServiceImpl implements CaseService {
             caseDao.moveUpdate(testCase);
         }
 
-        if (!isCopy) {
-            caseDao.updateParentIfNeeded(srcParentId);
-        }
-        if ("inner".equals(moveType)) {
-            caseDao.updateParentIfNeeded(targetId);
-        }
+//        if (!isCopy) {
+//            caseDao.updateParentIfNeeded(srcParentId);
+//        }
+//        if ("inner".equals(moveType)) {
+//            caseDao.updateParentIfNeeded(targetId);
+//        }
 
         caseHistoryService.saveHistory(user, action, testCase.getId(),null);
 
@@ -215,17 +218,25 @@ public class CaseServiceImpl extends BaseServiceImpl implements CaseService {
 	public TstCase update(JSONObject json, TstUser user) {
         Integer projectId = user.getDefaultPrjId();
 
-        TstCase testCaseVo = JSON.parseObject(JSON.toJSONString(json), TstCase.class);
+        TstCase vo = JSON.parseObject(JSON.toJSONString(json), TstCase.class);
 
-        testCaseVo.setUpdateById(user.getId());
-        Integer count = caseDao.update(testCaseVo, genExtPropList(), projectId);
+        json.put("updateById", user.getId());
+
+        List<CustomField> fields = customFieldDao.listForCase(user.getDefaultOrgId());
+        JSONObject jsonb = new JSONObject();
+        List<String> props = genExtPropList();
+        for (CustomField field : fields) {
+            jsonb.put(field.getColCode(), json.get(field.getColCode()));
+        }
+
+        Integer count = caseDao.update(vo, jsonb.toJSONString(), projectId);
         if (count == 0) {
             return null;
         }
 
-        caseHistoryService.saveHistory(user, Constant.EntityAct.update, testCaseVo.getId(),null);
+        caseHistoryService.saveHistory(user, MsgUtil.MsgAction.update, json.getInteger("id"),null);
 
-        TstCase ret = caseDao.getDetail(testCaseVo.getId(), projectId);
+        TstCase ret = caseDao.getDetail(json.getInteger("id"), projectId);
 		return ret;
 	}
 
@@ -240,9 +251,9 @@ public class CaseServiceImpl extends BaseServiceImpl implements CaseService {
         }
 
         TstCase testCase = caseDao.get(id, null);
-        caseDao.updateParentIfNeeded(testCase.getpId());
+//        caseDao.updateParentIfNeeded(testCase.getpId());
 
-        caseHistoryService.saveHistory(user, Constant.EntityAct.delete, testCase.getId(),null);
+        caseHistoryService.saveHistory(user, MsgUtil.MsgAction.delete, testCase.getId(),null);
 
         return count;
 	}
@@ -258,7 +269,7 @@ public class CaseServiceImpl extends BaseServiceImpl implements CaseService {
         }
 
         TstCase testCase = caseDao.getDetail(id, projectId);
-        caseHistoryService.saveHistory(user, Constant.EntityAct.update, testCase.getId(), "内容类型");
+        caseHistoryService.saveHistory(user, MsgUtil.MsgAction.update, testCase.getId(), "内容类型");
         return testCase;
     }
 
@@ -288,19 +299,33 @@ public class CaseServiceImpl extends BaseServiceImpl implements CaseService {
     @Transactional
     public TstCase saveField(JSONObject json, TstUser user) {
         Integer projectId = user.getDefaultPrjId();
+        Integer caseProjectId = json.getInteger("caseProjectId");
+
+        if (caseProjectId != null && !authDao.userNotInProject(user.getId(), projectId)) {
+            projectId = caseProjectId;
+        }
 
         Integer id = json.getInteger("id");
         String code = json.getString("code");
-        String value = json.getString("value");
         String label = json.getString("label");
+        Boolean buildIn = json.getBoolean("buildIn");
+        String type = json.getString("type");
 
-        Integer count = caseDao.updateProp(id, code, value, projectId, user.getId());
+        Object value = CustomFieldUtil.GetFieldVal(type, json);
+
+        Integer count;
+        if (buildIn) {
+            count = caseDao.updateProp(id, code, value, projectId);
+        } else {
+            count = caseDao.updateExtProp(id, code, value, projectId);
+        }
+
         if (count == 0) {
             return null;
         }
 
         TstCase testCase = caseDao.getDetail(id, projectId);
-        caseHistoryService.saveHistory(user, Constant.EntityAct.update, testCase.getId(),label);
+        caseHistoryService.saveHistory(user, MsgUtil.MsgAction.update, testCase.getId(),label);
 
         return testCase;
     }
@@ -308,41 +333,29 @@ public class CaseServiceImpl extends BaseServiceImpl implements CaseService {
     @Override
     @Transactional
     public void createSample(Integer projectId, TstUser user) {
-        TstCase root = new TstCase();
-        root.setName("测试用例");
-        root.setLeaf(false);
-        root.setProjectId(projectId);
-        root.setCreateById(user.getId());
-        root.setCreateTime(new Date());
-        root.setOrdr(0);
-
-        caseDao.create(root);
+        TstCase root = new TstCase("测试用例", null, projectId, null, null, user.getId(), true, 1);
+        caseDao.createSample(root);
         caseDao.setDefaultVal(root.getId(), user.getDefaultOrgId());
 
-        TstCase testCase = new TstCase();
-        testCase.setName("新特性");
-        testCase.setpId(root.getId());
-        testCase.setProjectId(projectId);
-        testCase.setCreateById(user.getId());
-        testCase.setCreateTime(new Date());
-        testCase.setLeaf(false);
-        testCase.setOrdr(0);
-        caseDao.create(testCase);
-        caseDao.setDefaultVal(testCase.getId(), user.getDefaultOrgId());
-        caseHistoryService.saveHistory(user, Constant.EntityAct.create, testCase.getId(),null);
+        TstCase testCase = new TstCase("新特性", root.getId(), projectId, null, null, user.getId(), true, 1);
+        caseDao.createSample(testCase);
 
-        TstCase testCase2 = new TstCase();
-        testCase2.setName("新用例");
-        testCase2.setpId(testCase.getId());
-        testCase2.setProjectId(projectId);
-        testCase2.setCreateById(user.getId());
-        testCase2.setCreateTime(new Date());
-        testCase2.setLeaf(true);
-        testCase2.setOrdr(0);
-        caseDao.create(testCase2);
+        TstCaseType caseType = caseTypeService.getDefault(user.getDefaultOrgId());
+        TstCasePriority casePriority = casePriorityService.getDefault(user.getDefaultOrgId());
+
+        TstCase testCase2 = new TstCase("新用例", testCase.getId(), projectId, caseType.getId(), casePriority.getId(),
+                user.getId(), false, 1);
+        caseDao.createSample(testCase2);
         caseDao.setDefaultVal(testCase2.getpId(), user.getDefaultOrgId());
 
-        caseHistoryService.saveHistory(user, Constant.EntityAct.create, testCase2.getId(),null);
+        caseHistoryService.saveHistory(user, MsgUtil.MsgAction.create, testCase2.getId(),null);
+
+        TstCaseStep step = new TstCaseStep("操作步骤1", "期待结果1", 1, testCase2.getId());
+        caseStepDao.save(step);
+        step = new TstCaseStep("操作步骤2", "期待结果2", 2, testCase2.getId());
+        caseStepDao.save(step);
+        step = new TstCaseStep("操作步骤3", "期待结果3", 3, testCase2.getId());
+        caseStepDao.save(step);
     }
 
     @Override

@@ -91,6 +91,11 @@ public class FileUtil {
         return des;
     }
 
+    public static String UuidFileName(String origName) {
+        String ext = FilenameUtils.getExtension(origName);
+        return UUID.randomUUID().toString() + "." + ext;
+    }
+
     public static String RandomFilePath(String brother, String ext) {
         String dir = brother.substring(0, brother.lastIndexOf("/") + 1) ;
         String fileName = UUID.randomUUID().toString() + "." + ext;
@@ -161,7 +166,7 @@ public class FileUtil {
 //
 //                            AiRunMlf mlf = new AiRunMlf();
 //                            mlf.setPath(mlfPath);
-//                            mlfs.add(mlf);
+//                            mlfs.save(mlf);
 //                        }
 //                    }
 //                }

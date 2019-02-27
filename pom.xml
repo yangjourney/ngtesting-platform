@@ -5,7 +5,7 @@
 
     <groupId>com.ngtesting.plaform</groupId>
     <artifactId>ngtesting-web</artifactId>
-    <version>1.0.10</version>
+    <version>2.0.0</version>
     <packaging>jar</packaging>
 
     <name>ngtesting-web</name>
@@ -44,10 +44,11 @@
         </dependency>
 
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -191,12 +192,6 @@
             <artifactId>poi-ooxml</artifactId>
             <version>3.17</version>
         </dependency>
-
-        <dependency>
-            <groupId>com.itfsw</groupId>
-            <artifactId>QueryBuilder</artifactId>
-            <version>1.0.2</version>
-        </dependency>
     </dependencies>
 
     <build>
@@ -250,16 +245,16 @@
                             <tasks>
                                 <exec executable="chmod">
                                     <arg value="+x" />
-                                    <arg value="${project.basedir}/src/main/docker/mysql/export-db.sh" />
+                                    <arg value="${project.basedir}/src/main/docker/postgres/export-db.sh" />
                                 </exec>
-                                <exec executable="${project.basedir}/src/main/docker/mysql/export-db.sh"
-                                      dir="${project.basedir}/src/main/docker/mysql">
+                                <exec executable="${project.basedir}/src/main/docker/postgres/export-db.sh"
+                                      dir="${project.basedir}/src/main/docker/postgres">
                                 </exec>
                             </tasks>
                         </configuration>
                     </execution>
 
-                    <execution>
+                    <!--<execution>
                         <id>copy-jar</id>
                         <phase>package</phase>
                         <goals>
@@ -278,20 +273,20 @@
                                 </exec>
                             </tasks>
                         </configuration>
-                    </execution>
+                    </execution>-->
 
                     <execution>
-                        <id>gen-mysql-image</id>
+                        <id>gen-postgres-image</id>
                         <phase>integration-test</phase>
                         <goals>
                             <goal>run</goal>
                         </goals>
                         <configuration>
                             <tasks>
-                                <exec executable="docker" dir="${project.basedir}/src/main/docker/mysql">
+                                <exec executable="docker" dir="${project.basedir}/src/main/docker/postgres">
                                     <arg value="build" />
                                     <arg value="-t" />
-                                    <arg value="registry.cn-hangzhou.aliyuncs.com/ngtesting/ngtesting-mysql:${version}" />
+                                    <arg value="registry.cn-shanghai.aliyuncs.com/ngtesting/ngtesting-postgres:${version}" />
                                     <arg value="." />
                                 </exec>
                             </tasks>
@@ -308,12 +303,12 @@
                             <tasks>
                                 <exec executable="docker">
                                     <arg value="push" />
-                                    <arg value="registry.cn-hangzhou.aliyuncs.com/ngtesting/ngtesting-mysql:${version}" />
+                                    <arg value="registry.cn-shanghai.aliyuncs.com/ngtesting/ngtesting-postgres:${version}" />
                                 </exec>
 
                                 <exec executable="docker">
                                     <arg value="push" />
-                                    <arg value="registry.cn-hangzhou.aliyuncs.com/ngtesting/ngtesting-web:${version}" />
+                                    <arg value="registry.cn-shanghai.aliyuncs.com/ngtesting/ngtesting-web:${version}" />
                                 </exec>
                             </tasks>
                         </configuration>
@@ -337,7 +332,7 @@
                 </executions>
 
                 <configuration>
-                    <imageName>registry.cn-hangzhou.aliyuncs.com/ngtesting/ngtesting-web:${version}
+                    <imageName>registry.cn-shanghai.aliyuncs.com/ngtesting/ngtesting-web:${version}
                     </imageName>
                     <dockerDirectory>src/main/docker</dockerDirectory>
                     <resources>

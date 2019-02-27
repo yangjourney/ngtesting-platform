@@ -1,47 +1,37 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
-<mapper namespace="com.ngtesting.platform.dao.UserDao" >
+<mapper namespace="com.ngtesting.platform.dao.UserDao">
 
     <select id="query" resultType="TstUser">
-        SELECT * FROM TstUser usr
+        SELECT * FROM "TstUser" usr
 
-        JOIN TstOrgUserRelation r ON r.userId = usr.id
+        JOIN "TstOrgUserRelation" r ON r."userId" = usr.id
 
         WHERE TRUE
         <if test="keywords != null and keywords != ''">
             AND (
-            usr.nickname LIKE CONCAT('%','${keywords}','%' )
-            OR usr.email LIKE CONCAT('%','${keywords}','%' )
-            OR usr.phone LIKE CONCAT('%','${keywords}','%' )
+            usr.nickname LIKE '%${keywords}%'
+            OR usr.email LIKE '%${keywords}%'
+            OR usr.phone LIKE '%${keywords}%'
             )
         </if>
         <if test="disabled != null">
             AND usr.disabled = #{disabled}
         </if>
 
-        AND r.orgId = #{orgId}
-        AND usr.deleted != TRUE
+        AND r."orgId" = #{orgId}
+        AND NOT usr.deleted
         ORDER BY usr.id ASC
     </select>
 
     <select id="queryByUser" resultType="TstUser">
-        SELECT * FROM tstUser
+        SELECT *
+        FROM "tstUser"
     </select>
 
     <select id="getProjectUsers" resultType="TstUser">
-        select usr.id, usr.nickname from TstUser usr
-        where usr.id in
-        (
-            select relation1.entityId from TstProjectRoleEntityRelation relation1
-                where relation1.type = 'user' AND relation1.projectId = #{prjId}
-            UNION
-            select relta.userId from TstOrgGroupUserRelation relta
-                where relta.orgGroupId in
-                (
-                    select relation2.entityId from TstProjectRoleEntityRelation relation2
-                        where relation2.type = 'group' AND relation2.projectId = #{prjId}
-                )
-        )
+        select usr.id, usr.nickname from "TstUser" usr
+        where usr.id = any ( select "userId" from _project_user(#{prjId}) )
         ORDER by usr.id ASC
         <if test="numb != null">
             LIMIT 10
@@ -49,122 +39,144 @@
     </select>
 
     <select id="get" parameterType="int" resultType="TstUser">
-        SELECT usr.*,
-          s.leftSizeDesign leftSizeDesign, s.leftSizeExe leftSizeExe, s.issueView issueView
-        FROM TstUser usr
-        JOIN TstUserSettings s ON s.userId = usr.id
+        SELECT usr.*, s."leftSizeDesign", s."leftSizeExe", s."issueView"
+        FROM "TstUser" usr
+                 JOIN "TstUserSettings" s ON s."userId" = usr.id
 
         WHERE usr.id = #{id}
     </select>
     <select id="getByEmail" parameterType="string" resultType="TstUser">
-        SELECT usr.*,
-          s.leftSizeDesign leftSizeDesign, s.leftSizeExe leftSizeExe, s.issueView issueView,
-          s.issueColumns issueColumns
+        SELECT usr.*, s."leftSizeDesign", s."leftSizeExe", s."issueView", s."issueColumns"
 
-        FROM TstUser usr
-        JOIN TstUserSettings s ON s.userId = usr.id
+        FROM "TstUser" usr
+                 JOIN "TstUserSettings" s ON s."userId" = usr.id
 
         WHERE usr.email = #{email}
-        AND usr.disabled != TRUE AND usr.deleted != TRUE
+          AND NOT usr.disabled
+          AND NOT usr.deleted
 
         LIMIT 1;
     </select>
 
     <!--<select id="getByEmailAndPassword" resultType="TstUser">-->
-        <!--SELECT * FROM TstUser WHERE email = #{email} AND password=#{password} LIMIT 1;-->
+    <!--SELECT * FROM TstUser WHERE email = #{email} AND password=#{password} LIMIT 1;-->
     <!--</select>-->
 
     <select id="getByToken" resultType="TstUser">
-        SELECT usr.*,
-          s.leftSizeDesign leftSizeDesign, s.leftSizeExe leftSizeExe, s.issueView issueView,
-          s.issueColumns issueColumns
+        SELECT usr.*, s."leftSizeDesign", s."leftSizeExe", s."issueView", s."issueColumns"
 
-        FROM TstUser usr
-        JOIN TstUserSettings s ON s.userId = usr.id
+        FROM "TstUser" usr
+                 JOIN "TstUserSettings" s ON s."userId" = usr.id
 
         WHERE usr.token = #{token}
-        AND usr.disabled != TRUE AND usr.deleted != TRUE
+          AND NOT usr.disabled
+          AND NOT usr.deleted
         LIMIT 1;
     </select>
     <select id="getByPhone" resultType="TstUser">
-        SELECT * FROM TstUser WHERE phone = #{phone}
-        AND disabled != TRUE AND deleted != TRUE
+        SELECT *
+        FROM "TstUser"
+        WHERE phone = #{phone}
+          AND NOT disabled
+          AND NOT deleted
         LIMIT 1;
     </select>
 
     <select id="getSalt" resultType="String">
-        SELECT salt FROM TstUser WHERE id = #{id}
-        AND disabled != TRUE AND deleted != TRUE
+        SELECT salt
+        FROM "TstUser"
+        WHERE id = #{id}
+          AND NOT disabled
+          AND NOT deleted
         LIMIT 1;
     </select>
 
     <insert id="save" parameterType="TstUser" useGeneratedKeys="true" keyProperty="id">
-        insert into TstUser (email,password,nickname,phone,avatar,token,salt,
-          defaultOrgId,defaultOrgName,defaultPrjId,defaultPrjName,
-          deleted,disabled,createTime)
-        values (#{email},#{password},#{nickname},#{phone},#{avatar},#{token},#{temp},
-          #{defaultOrgId},#{defaultOrgName},#{defaultPrjId},#{defaultPrjName},
-          #{deleted},#{disabled},#{createTime})
+        insert into "TstUser" (email,
+                               password,
+                               nickname,
+                               phone,
+                               avatar,
+                               token,
+                               salt,
+                               "defaultOrgId",
+                               "defaultOrgName",
+                               "defaultPrjId",
+                               "defaultPrjName",
+                               deleted,
+                               disabled,
+                               "createTime")
+        values (#{email},
+                #{password},
+                #{nickname},
+                #{phone},
+                #{avatar},
+                #{token},
+                #{temp},
+                #{defaultOrgId},
+                #{defaultOrgName},
+                #{defaultPrjId},
+                #{defaultPrjName},
+                #{deleted},
+                #{disabled},
+                #{createTime})
     </insert>
     <insert id="saveSettings" parameterType="TstUser">
-        insert into TstUserSettings (leftSizeDesign,leftSizeExe,userId)
-        values (#{leftSizeDesign},#{leftSizeExe},#{id})
+        insert into "TstUserSettings" ("leftSizeDesign", "leftSizeExe", "userId")
+        values (#{leftSizeDesign}, #{leftSizeExe}, #{id})
     </insert>
 
     <update id="update" parameterType="TstUser">
-        UPDATE TstUser
-        SET email=#{email}, nickname=#{nickname}, phone=#{phone}, disabled=#{disabled}
-        WHERE id=#{id}
+        UPDATE "TstUser"
+        SET email = #{email},
+            nickname = #{nickname},
+            phone = #{phone},
+            disabled = #{disabled}
+        WHERE id = #{id}
     </update>
 
     <update id="modifyProp">
-        UPDATE TstUser
-        SET ${prop} = #{value}, updateTime=NOW()
-        WHERE id=#{id}
+        UPDATE "TstUser"
+        SET ${prop}      = #{value},
+            "updateTime" = NOW()
+        WHERE id = #{id}
     </update>
 
     <update id="setLeftSize" parameterType="TstUser">
-        UPDATE TstUserSettings
-        SET leftSizeDesign=#{leftSizeDesign}, leftSizeExe=#{leftSizeExe}, leftSizeIssue=#{leftSizeIssue}
+        UPDATE "TstUserSettings"
+        SET "leftSizeDesign" = #{leftSizeDesign},
+            "leftSizeExe" = #{leftSizeExe},
+            "leftSizeIssue" = #{leftSizeIssue}
 
-        WHERE userId=#{id}
+        WHERE "userId" = #{id}
     </update>
     <update id="setIssueView" parameterType="TstUser">
-        UPDATE TstUserSettings
-        SET issueView=#{issueView}
-        WHERE userId=#{id}
+        UPDATE "TstUserSettings"
+        SET "issueView" = #{issueView}
+        WHERE "userId" = #{id}
     </update>
     <update id="saveIssueColumns">
-        UPDATE TstUserSettings
-        SET issueColumns=#{issueColumns}
-        WHERE userId=#{userId}
+        UPDATE "TstUserSettings"
+        SET "issueColumns" = #{issueColumns}
+        WHERE "userId" = #{userId}
     </update>
     <update id="saveIssueFields">
-        UPDATE TstUserSettings
-        SET issueFields=#{issueFields}
-        WHERE userId=#{userId}
+        UPDATE "TstUserSettings"
+        SET "issueFields" = #{issueFields}
+        WHERE "userId" = #{userId}
     </update>
 
-    <select id="search" resultType="TstUser">
-        SELECT * FROM TstUser usr
+    <select id="searchOrgUser" resultType="TstUser">
+        SELECT * FROM "TstUser" usr
+        JOIN "TstOrgUserRelation" r ON r."orgId" = #{orgId} AND r."userId" = usr.id
 
-        WHERE usr.id in
-        (
-            select relation1.entityId from TstProjectRoleEntityRelation relation1
-              where relation1.type = 'user' AND relation1.projectId = #{projectId}
-            UNION
-            select relta.userId from TstOrgGroupUserRelation relta
-                where relta.orgGroupId in
-                (
-                select relation2.entityId from TstProjectRoleEntityRelation relation2
-                where relation2.type = 'group' AND relation2.projectId = #{projectId}
-                )
-        )
+        WHERE TRUE
+
         <if test="keywords != null and keywords != ''">
             AND (
-              usr.nickname LIKE CONCAT('%','${keywords}','%' )
-              OR usr.email LIKE CONCAT('%','${keywords}','%' )
-              OR usr.phone LIKE CONCAT('%','${keywords}','%' )
+            usr.nickname ilike '%${keywords}%'
+            OR usr.email ilike '%${keywords}%'
+            OR usr.phone ilike '%${keywords}%'
             )
         </if>
         <if test="exceptIds != null and exceptIds.size > 0">
@@ -174,16 +186,40 @@
             </foreach>
         </if>
 
-        AND usr.deleted != TRUE
-        AND usr.disabled != TRUE
+        AND NOT usr.deleted
+        AND NOT usr.disabled
         ORDER BY usr.id ASC
     </select>
 
-    <delete id="removeFromOrg">
-      { call remove_user_from_org(
+    <select id="searchPrjUser" resultType="TstUser">
+        SELECT * FROM "TstUser" usr
+
+        WHERE usr.id = any ( select "userId" from _project_user(#{projectId}) )
+
+        <if test="keywords != null and keywords != ''">
+            AND (
+            usr.nickname ilike '%${keywords}%'
+            OR usr.email ilike '%${keywords}%'
+            OR usr.phone ilike '%${keywords}%'
+            )
+        </if>
+        <if test="exceptIds != null and exceptIds.size > 0">
+            AND usr.id NOT IN
+            <foreach collection="exceptIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        AND NOT usr.deleted
+        AND NOT usr.disabled
+        ORDER BY usr.id ASC
+    </select>
+
+    <delete id="removeFromOrg" statementType="CALLABLE">
+        {call remove_user_from_org(
                 #{userId,mode=IN,jdbcType=INTEGER},
                 #{orgId,mode=IN,jdbcType=INTEGER}
-             ) }
+        )}
     </delete>
 
 </mapper>

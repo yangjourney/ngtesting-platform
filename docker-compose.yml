@@ -1,18 +1,18 @@
 version : '2'
 services:
-  ngtesting-mysql:
-    image: registry.cn-hangzhou.aliyuncs.com/ngtesting/ngtesting-mysql:1.0.10
+  ngtesting-postgres:
+    image: registry.cn-shanghai.aliyuncs.com/ngtesting/ngtesting-postgres:2.0.0
     environment:
-      - MYSQL_ROOT_PASSWORD=P2ssw0rd
+      - POSTGRES_PASSWORD=P2ssw0rd
     ports:
-      - "53306:3306"
-    expose:
-      - "53306"
+      - "55432:5432"
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
 
   ngtesting-web:
-    image: registry.cn-hangzhou.aliyuncs.com/ngtesting/ngtesting-web:1.0.10
+    image: registry.cn-shanghai.aliyuncs.com/ngtesting/ngtesting-web:2.0.0
     depends_on:
-      - ngtesting-mysql
+      - ngtesting-postgres
     ports:
       - "58080:8080"
-    command: ["/wait-for-it.sh", "ngtesting-mysql:3306", "--", "/usr/bin/java", "-Djava.security.egd=file:/dev/./urandom", "-jar", "/ngtesting-web.jar", "--spring.profiles.active=docker"]
+    command: sh /launch.sh

@@ -13,7 +13,7 @@ import com.ngtesting.platform.utils.FileUtil;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
-import org.apache.poi.xssf.usermodel.XSSFFont;
+import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -52,7 +52,7 @@ public class CaseExportServiceImpl extends BaseServiceImpl implements CaseExport
         XSSFWorkbook wb = new XSSFWorkbook();
         Sheet sheet = wb.createSheet();
         sheet.autoSizeColumn(1, true);
-        sheet.setColumnWidth(0, 10 * 256);
+        sheet.setColumnWidth(0, 12 * 256);
         sheet.setColumnWidth(1, 50 * 256);
         sheet.setColumnWidth(2, 16 * 256);
         sheet.setColumnWidth(3, 16 * 256);
@@ -65,20 +65,13 @@ public class CaseExportServiceImpl extends BaseServiceImpl implements CaseExport
         XSSFCellStyle stepStyle = wb.createCellStyle();
 
         Font fontStyle = wb.createFont();
-//        fontStyle.setBold(true); // 加粗
         fontStyle.setFontName("黑体"); // 字体
         fontStyle.setFontHeightInPoints((short) 13); // 大小
         cellStyle.setFont(fontStyle);
 
         Font fontStyle2 = wb.createFont();
-        ((XSSFFont) fontStyle2).setColor(IndexedColors.BLUE.getIndex());
         fontStyle2.setFontHeightInPoints((short) 13); // 大小
         stepStyle.setFont(fontStyle2);
-
-//        cellStyle.setBorderBottom(BorderStyle.THIN);
-//        cellStyle.setBorderLeft(BorderStyle.THIN);
-//        cellStyle.setBorderRight(BorderStyle.THIN);
-//        cellStyle.setBorderTop(BorderStyle.THIN);
 
         rowCount = writeHeader(sheet, rowCount, cellStyle);
 
@@ -103,7 +96,13 @@ public class CaseExportServiceImpl extends BaseServiceImpl implements CaseExport
     }
 
     @Override
-    public Integer writeHeader(Sheet sheet, Integer rowCount, XSSFCellStyle cellStyle) {
+    public Integer writeHeader(Sheet sheet, Integer rowCount, XSSFCellStyle style) {
+        XSSFCellStyle cellStyle = (XSSFCellStyle) style.clone();
+
+        XSSFColor color = new XSSFColor(new java.awt.Color(220, 220, 220));
+        cellStyle.setFillForegroundColor(color);
+        cellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
         Row titleRow = sheet.createRow(rowCount++);
         int cellCount = 0;
         Cell idCell = titleRow.createCell(cellCount++);
@@ -113,7 +112,7 @@ public class CaseExportServiceImpl extends BaseServiceImpl implements CaseExport
         Cell estimateCell = titleRow.createCell(cellCount++);
         Cell objectiveCell = titleRow.createCell(cellCount++);
 
-        idCell.setCellValue("层级");
+        idCell.setCellValue("层级/序号");
         titleCell.setCellValue("标题");
         typeCell.setCellValue("类型");
         priorityCell.setCellValue("优先级");
@@ -135,13 +134,20 @@ public class CaseExportServiceImpl extends BaseServiceImpl implements CaseExport
     public Integer writeTestCase(TstCase testCase, Sheet sheet, Integer rowCount,
                                  XSSFCellStyle cellStyle, XSSFCellStyle stepStyle) {
         Integer ind = testCase.getLevel();
+
+        XSSFColor color = new XSSFColor(new java.awt.Color(237, 237, 237));
+        cellStyle.setFillForegroundColor(color);
+        cellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
         XSSFCellStyle indentionStyle = (XSSFCellStyle)cellStyle.clone();
         indentionStyle.setIndention(ind.shortValue());
 
         stepStyle = (XSSFCellStyle)stepStyle.clone();
         stepStyle.setIndention(ind.shortValue());
 
+        sheet.addMergedRegion(new CellRangeAddress(rowCount, rowCount, 1, 5));
         Row row = sheet.createRow(rowCount++);
+
         int cellCount = 0;
         Cell idCell = row.createCell(cellCount++);
         Cell titleCell = row.createCell(cellCount++);
@@ -153,40 +159,49 @@ public class CaseExportServiceImpl extends BaseServiceImpl implements CaseExport
         idCell.setCellValue(testCase.getLevel());
         titleCell.setCellValue(testCase.getName());
 
-        if (testCase.getLeaf()) {
+        if (!testCase.getIsParent()) {
             typeCell.setCellValue(testCase.getTypeName());
             priorityCell.setCellValue(testCase.getPriorityName());
             estimateCell.setCellValue(testCase.getEstimate() == null ? "" : testCase.getEstimate().toString());
             objectiveCell.setCellValue(testCase.getObjective());
-        }
 
-        idCell.setCellStyle(cellStyle);
-        titleCell.setCellStyle(indentionStyle);
-
-        if (testCase.getLeaf()) {
             typeCell.setCellStyle(cellStyle);
             priorityCell.setCellStyle(cellStyle);
             estimateCell.setCellStyle(cellStyle);
             objectiveCell.setCellStyle(cellStyle);
         }
 
-        if (testCase.getLeaf()) {
-            for (TstCaseStep step : testCase.getSteps()) {
-                sheet.addMergedRegion(new CellRangeAddress(rowCount, rowCount, 2, 5));
+        idCell.setCellStyle(cellStyle);
+        titleCell.setCellStyle(indentionStyle);
 
-                Row stepRow = sheet.createRow(rowCount++);
+        if (!testCase.getIsParent()) {
+            if (TstCase.CaseContentType.steps.equals(testCase.getContentType())) {
+                for (TstCaseStep step : testCase.getSteps()) {
+                    sheet.addMergedRegion(new CellRangeAddress(rowCount, rowCount, 2, 5));
+
+                    Row stepRow = sheet.createRow(rowCount++);
+                    cellCount = 0;
+                    Cell ordrCell = stepRow.createCell(cellCount++);
+                    Cell optCell = stepRow.createCell(cellCount++);
+                    Cell resultCell = stepRow.createCell(cellCount++);
+
+                    ordrCell.setCellValue(step.getOrdr());
+
+                    optCell.setCellValue(step.getOpt());
+                    optCell.setCellStyle(stepStyle);
+
+                    resultCell.setCellValue(step.getExpect());
+                    resultCell.setCellStyle(stepStyle);
+                }
+            } else {
+                sheet.addMergedRegion(new CellRangeAddress(rowCount, rowCount, 1, 5));
+                Row contentRow = sheet.createRow(rowCount++);
                 cellCount = 0;
-                Cell ordrCell = stepRow.createCell(cellCount++);
-                Cell optCell = stepRow.createCell(cellCount++);
-                Cell resultCell = stepRow.createCell(cellCount++);
+                Cell ordrCell = contentRow.createCell(cellCount++);
+                Cell contentCell = contentRow.createCell(cellCount++);
 
-                ordrCell.setCellValue(step.getOrdr());
-
-                optCell.setCellValue(step.getOpt());
-                optCell.setCellStyle(stepStyle);
-
-                resultCell.setCellValue(step.getExpect());
-                resultCell.setCellStyle(stepStyle);
+                contentCell.setCellValue(testCase.getContent());
+                contentCell.setCellStyle(stepStyle);
             }
         }
 
